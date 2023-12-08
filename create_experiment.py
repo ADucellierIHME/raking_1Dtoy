@@ -28,7 +28,7 @@ def generate_data(mu_i, sigma2_i, L):
     x_i = np.zeros(n)
     for index, (mu, sigma2) in enumerate(zip(mu_i, sigma2_i)):
         if L == 'lognormal':
-            v = log(1 + sigma2 / mu)
+            v = log(1 + sigma2 / mu**2)
             m = log(mu) - v / 2
             z = np.random.normal(0, 1, 1)[0]
             x_i[index] = exp(m + sqrt(v) * z)
