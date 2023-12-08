@@ -94,7 +94,7 @@ def plot_MAPE(df_MAPE):
     )
     chart1.save('MAPE_variable.html')
 
-    chart2 = alt.Chart(df_MAPE).mark_point().encode(
+    chart2 = alt.Chart(df_MAPE).mark_line().encode(
       x='variance:Q',
       y='MAPE:Q',
       color='method:N'
