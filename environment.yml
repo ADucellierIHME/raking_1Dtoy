@@ -1,0 +1,13 @@
+name: raking_1Dtoy
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - altair
+  - jupyter
+  - matplotlib
+  - notebook
+  - numpy
+  - pandas
+  - scipy
+
