@@ -49,31 +49,31 @@ def compute_MAPEs(mu_i, mu_tilde_i):
         error_mean[j] = np.mean(error[:, j])
     return (error, error_mean)
 
-def gather_MAPE(mu_i, sigma2_i, error):
+def gather_MAPE(mu_i, sigma_i, error):
     """
     Function to gather the MAPE results into a pandas dataframe
     Input:
       - mu_i: 1D numpy array, means of the RV
-      - sigma2_i: 1D numpy array, variances of the RV
+      - sigma_i: 1D numpy array, standard deviations of the RV
       - error: 2D Numpy array, MAPE for each RV and each method
     Output:
       - df: pandas DataFrame with columns
-               [variable, true_mean, variance, method]
+               [variable, true_mean, standard_deviation, method]
     """
     df1 = pd.DataFrame({'variable': np.arange(1, len(mu_i) + 1),
                         'true_mean': mu_i,
-                        'variance': sigma2_i,
-                        'method': 'without_sigma2',
+                        'standard_deviation': sigma_i,
+                        'method': 'without_sigma',
                         'MAPE': error[:, 0]})
     df2 = pd.DataFrame({'variable': np.arange(1, len(mu_i) + 1),
                         'true_mean': mu_i,
-                        'variance': sigma2_i,
-                        'method': 'with_sigma2',
+                        'standard_deviation': sigma_i,
+                        'method': 'with_sigma',
                         'MAPE': error[:, 1]})
     df3 = pd.DataFrame({'variable': np.arange(1, len(mu_i) + 1),
                         'true_mean': mu_i,
-                        'variance': sigma2_i,
-                        'method': 'with_sigma2_complex',
+                        'standard_deviation': sigma_i,
+                        'method': 'with_sigma_complex',
                         'MAPE': error[:, 2]})
     df = pd.concat([df1, df2, df3])
     return df
@@ -83,7 +83,7 @@ def plot_MAPE(df_MAPE):
     Function to plot the MAPE results
     Input:
       df_MAPE: pandas DataFrame with columns
-               [variable, true_mean, variance, method]
+               [variable, true_mean, standard_deviation, method]
     Output: None
     """
     chart1 = alt.Chart(df_MAPE).mark_bar().encode(
@@ -95,9 +95,9 @@ def plot_MAPE(df_MAPE):
     chart1.save('MAPE_variable.html')
 
     chart2 = alt.Chart(df_MAPE).mark_line().encode(
-      x='variance:Q',
+      x='standard_deviation:Q',
       y='MAPE:Q',
       color='method:N'
     )
-    chart2.save('MAPE_variance.html')
+    chart2.save('MAPE_standard_deviation.html')
 
