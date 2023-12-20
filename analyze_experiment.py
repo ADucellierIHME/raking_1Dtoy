@@ -87,17 +87,32 @@ def plot_MAPE(df_MAPE):
     Output: None
     """
     chart1 = alt.Chart(df_MAPE).mark_bar().encode(
-      x='method:O',
-      y='MAPE:Q',
-      color='method:N',
-      column='variable:O'
+        x=alt.X('method:O', axis=alt.Axis(title='Method')),
+        y=alt.Y('MAPE:Q', axis=alt.Axis(title='Mean Average Percentage Error')),
+        color=alt.Color('method:N', legend=alt.Legend(title='Raking method')),
+        column=alt.Column('variable:O', header=alt.Header(title='Variable', titleFontSize=16))
+    ).configure_axis(
+        labelFontSize=16,
+        titleFontSize=16
+    ).configure_legend(
+        labelFontSize=16,
+        titleFontSize=16,
+    ).configure_header(
+        labelFontSize=16,
+        titleFontSize=16
     )
     chart1.save('MAPE_variable.html')
 
     chart2 = alt.Chart(df_MAPE).mark_line().encode(
-      x='standard_deviation:Q',
-      y='MAPE:Q',
-      color='method:N'
+        x=alt.X('standard_deviation:Q', axis=alt.Axis(title='Standard deviation')),
+        y=alt.Y('MAPE:Q', axis=alt.Axis(title='Mean Average Percentage Error')),
+        color=alt.Color('method:N', legend=alt.Legend(title='Raking method'))
+    ).configure_axis(
+        labelFontSize=16,
+        titleFontSize=16
+    ).configure_legend(
+        labelFontSize=16,
+        titleFontSize=16,
     )
     chart2.save('MAPE_standard_deviation.html')
 
