@@ -1,6 +1,6 @@
 import numpy as np
 
-from math import abs, exp, log, sqrt
+from math import exp, log, sqrt
 
 def generate_data(mu_i, sigma_i, L):
     """
@@ -45,7 +45,8 @@ def raking_entropic_distance(p, v, T):
       x: 1D Numpy array, raked values
     """
     epsilon = 1
-    while epsilon > 1e-10
+    lambda_k = 1
+    while epsilon > 1e-10:
         f1 = T - np.sum(v * p * np.exp(- lambda_k * v))
         f2 = np.sum(np.square(v) * p * np.exp(- lambda_k * v))
         epsilon = abs(f1 / (f2 * lambda_k))
@@ -133,10 +134,12 @@ def single_simulation(mu_i, sigma_i, mu, L):
         'Only lognormal distribution is implemented'
 
     x_i = generate_data(mu_i, sigma_i, L)
-    mu_tilde_i = np.zeros((len(x_i), 3))
+    v_i = np.ones(len(x_i))
+    mu_tilde_i = np.zeros((len(x_i), 4))
     mu_tilde_i[:, 0] = raking_without_sigma(x_i, mu)
     mu_tilde_i[:, 1] = raking_with_sigma(x_i, sigma_i, mu)
     mu_tilde_i[:, 2] = raking_with_sigma_complex(x_i, sigma_i, mu)
+    mu_tilde_i[:, 3] = raking_entropic_distance(x_i, v_i, mu)
     return mu_tilde_i
 
 def run_simulations(mu_i, sigma_i, mu, L, N):
@@ -165,7 +168,7 @@ def run_simulations(mu_i, sigma_i, mu, L, N):
     assert L in ['lognormal'], \
         'Only lognormal distribution is implemented'
 
-    mu_tilde_i = np.zeros((len(mu_i), 3, N))
+    mu_tilde_i = np.zeros((len(mu_i), 4, N))
     for i in range(0, N):
         mu_tilde_i[:, :, i] = single_simulation(mu_i, sigma_i, mu, L)
     return mu_tilde_i

@@ -19,7 +19,7 @@ def MAPE(x, x_tilde):
 
 def compute_MAPEs(mu_i, mu_tilde_i):
     """
-    Compute MAPE for the 3 raking methods.
+    Compute MAPE for the 4 raking methods.
     We compute each for each random variables
     and also the average MAPE over all the random variables
     Input:
@@ -75,7 +75,12 @@ def gather_MAPE(mu_i, sigma_i, error):
                         'standard_deviation': sigma_i,
                         'method': 'with_sigma_complex',
                         'MAPE': error[:, 2]})
-    df = pd.concat([df1, df2, df3])
+    df4 = pd.DataFrame({'variable': np.arange(1, len(mu_i) + 1),
+                        'true_mean': mu_i,
+                        'standard_deviation': sigma_i,
+                        'method': 'entropic_distance',
+                        'MAPE': error[:, 3]})
+    df = pd.concat([df1, df2, df3, df4])
     return df
 
 def plot_MAPE(df_MAPE):
