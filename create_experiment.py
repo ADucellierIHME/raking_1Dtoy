@@ -1,6 +1,6 @@
 import numpy as np
 
-from math import exp, log, sqrt
+from math import abs, exp, log, sqrt
 
 def generate_data(mu_i, sigma_i, L):
     """
@@ -34,6 +34,25 @@ def generate_data(mu_i, sigma_i, L):
             x_i[index] = exp(m + sqrt(v) * z)
     return x_i
 
+def raking_entropic_distance(p, v, T):
+    """
+    Raking using the entropic distance
+    Input:
+      p: 1D Numpy array, observed values
+      v: 1D Numpy array, weights for the linear constraint (usually 1)
+      T: scalar, total of the linear constraint
+    Output:
+      x: 1D Numpy array, raked values
+    """
+    epsilon = 1
+    while epsilon > 1e-10
+        f1 = T - np.sum(v * p * np.exp(- lambda_k * v))
+        f2 = np.sum(np.square(v) * p * np.exp(- lambda_k * v))
+        epsilon = abs(f1 / (f2 * lambda_k))
+        lambda_k = lambda_k - f1 / f2
+    x = p * np.exp(- lambda_k * v)
+    return x
+    
 def raking_without_sigma(x_i, mu):
     """
     In the first version of raking, we do not use the
