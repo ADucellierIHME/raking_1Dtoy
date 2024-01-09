@@ -1,8 +1,10 @@
 import numpy as np
 import pandas as pd
 
-from create_experiment import run_simulations
-from analyze_experiment import compute_MAPEs, gather_MAPE, plot_MAPE
+from create_experiment import run_simulations, run_simulations_test_distances
+from analyze_experiment import compute_MAPEs, compute_MAPEs_test_distances
+from analyze_experiment import gather_MAPE, gather_MAPE_test_distances
+from analyze_experiment import plot_MAPE, plot_MAPE_test_distances
 
 # Set seed for reproducibility
 np.random.seed(0)
@@ -19,15 +21,29 @@ L = 'lognormal'
 # Choose number of experiments
 N = 500
 
+# To test the methods with the different implmentations with or without sigma
 # Run simulations
-mu_tilde_i = run_simulations(mu_i, sigma_i, mu, L, N)
+#mu_tilde_i = run_simulations(mu_i, sigma_i, mu, L, N)
 
 # Compute MAPES
-(error, error_mean) = compute_MAPEs(mu_i, mu_tilde_i)
+#(error, error_mean) = compute_MAPEs(mu_i, mu_tilde_i)
 
 # Create pandas dataframe to store and plot the results
-df = gather_MAPE(mu_i, sigma_i, error)
+#df = gather_MAPE(mu_i, sigma_i, error)
 
 # Plot MAPE
-plot_MAPE(df)
+#plot_MAPE(df)
+
+# To test the methods with the different distances
+# Run simulations
+mu_tilde_i = run_simulations_test_distances(mu_i, sigma_i, mu, L, N)
+
+# Compute MAPES
+(error, error_mean) = compute_MAPEs_test_distances(mu_i, mu_tilde_i)
+
+# Create pandas dataframe to store and plot the results
+df = gather_MAPE_test_distances(mu_i, sigma_i, error)
+
+# Plot MAPE
+plot_MAPE_test_distances(df)
 

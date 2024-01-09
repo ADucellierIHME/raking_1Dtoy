@@ -34,26 +34,62 @@ def generate_data(mu_i, sigma_i, L):
             x_i[index] = exp(m + sqrt(v) * z)
     return x_i
 
-def raking_entropic_distance(p, v, T):
+def raking_chi2_distance(x_i, v_i, mu):
     """
-    Raking using the entropic distance
+    Raking using the chi2 distance (mu - x)^2 / 2x
     Input:
-      p: 1D Numpy array, observed values
-      v: 1D Numpy array, weights for the linear constraint (usually 1)
-      T: scalar, total of the linear constraint
+      x_i: 1D Numpy array, observed values
+      v_i: 1D Numpy array, weights for the linear constraint (usually 1)
+      mu: scalar, total of the linear constraint
     Output:
-      x: 1D Numpy array, raked values
+      mu_i: 1D Numpy array, raked values
+    """
+    lambda_k = (mu - np.sum(x_i)) / np.sum(x_i * v_i)
+    mu_i = x_i * (v_i * lambda_k - 1)
+    return mu_i
+
+def raking_entropic_distance(x_i, v_i, mu):
+    """
+    Raking using the entropic distance mu log(mu/x) + x - mu
+    Input:
+      x_i: 1D Numpy array, observed values
+      v_i: 1D Numpy array, weights for the linear constraint (usually 1)
+      mu: scalar, total of the linear constraint
+    Output:
+      mu_i: 1D Numpy array, raked values
     """
     epsilon = 1
     lambda_k = 1
+    # Root finding problem to get lambda
     while epsilon > 1e-10:
-        f1 = T - np.sum(v * p * np.exp(- lambda_k * v))
-        f2 = np.sum(np.square(v) * p * np.exp(- lambda_k * v))
-        epsilon = abs(f1 / (f2 * lambda_k))
+        f1 = mu - np.sum(x_i * v_i * np.exp(- v_i * lambda_k))
+        f2 = np.sum(x_i * np.square(v_i) * np.exp(- v_i * lambda_k))
         lambda_k = lambda_k - f1 / f2
-    x = p * np.exp(- lambda_k * v)
-    return x
-    
+        epsilon = abs(f1 / (f2 * lambda_k))
+    mu_i = x_i * np.exp(- v_i * lambda_k)
+    return mu_i
+
+def raking_inverse_entropic_distance(x_i, v_i, mu):
+    """
+    Raking using the entropic distance x log(x/mu) + mu - x
+    Input:
+      x_i: 1D Numpy array, observed values
+      v_i: 1D Numpy array, weights for the linear constraint (usually 1)
+      mu: scalar, total of the linear constraint
+    Output:
+      mu_i: 1D Numpy array, raked values
+    """
+    epsilon = 1
+    lambda_k = 0
+    # Root finding problem to get lambda
+    while epsilon > 1.0e-10:
+        f1 = mu - np.sum(x_i * v_i /(1 + v_i * lambda_k))
+        f2 = np.sum(x_i * np.square(v_i) / np.square(1 + v_i * lambda_k))
+        lambda_k = lambda_k - f1 / f2
+        epsilon = abs(f1 / (f2 * lambda_k))
+    mu_i = x_i / (1 + v_i * lambda_k)
+    return mu_i
+
 def raking_without_sigma(x_i, mu):
     """
     In the first version of raking, we do not use the
@@ -139,7 +175,38 @@ def single_simulation(mu_i, sigma_i, mu, L):
     mu_tilde_i[:, 0] = raking_without_sigma(x_i, mu)
     mu_tilde_i[:, 1] = raking_with_sigma(x_i, sigma_i, mu)
     mu_tilde_i[:, 2] = raking_with_sigma_complex(x_i, sigma_i, mu)
-    mu_tilde_i[:, 3] = raking_entropic_distance(x_i, v_i, mu)
+    mu_tilde_i[:, 3] = raking_entropic_distance_2(x_i, v_i, mu)
+    return mu_tilde_i
+
+def single_simulation_test_distances(mu_i, sigma_i, mu, L):
+    """
+    Function to make a single simulation
+    and compute the mu_tilde_i with different distances.
+    Input:
+      - mu_i: 1D numpy array, means of the RV
+      - sigma_i: 1D numpy array, standard deviations of the RV
+      - mu: scalar, the known value of the mean of the sum
+      - L: character, distribution to be used
+           (lognomal, ...)
+    Output:
+      - mu_tilde_i: 2D numpy array, estimated means
+                    (one column per raking method)
+    """
+    assert isinstance(mu_i, np.ndarray), \
+        'Means should be a Numpy array'
+    assert isinstance(sigma_i, np.ndarray), \
+        'Standard deviations should be a Numpy array'
+    assert (len(mu_i) == len(sigma_i)), \
+        'Means and standard deviations arrays should have the same size'
+    assert L in ['lognormal'], \
+        'Only lognormal distribution is implemented'
+
+    x_i = generate_data(mu_i, sigma_i, L)
+    v_i = np.ones(len(x_i))
+    mu_tilde_i = np.zeros((len(x_i), 3))
+    mu_tilde_i[:, 1] = raking_chi2_distance(x_i, v_i, mu)
+    mu_tilde_i[:, 0] = raking_entropic_distance(x_i, v_i, mu)
+    mu_tilde_i[:, 2] = raking_inverse_entropic_distance(x_i, v_i, mu)
     return mu_tilde_i
 
 def run_simulations(mu_i, sigma_i, mu, L, N):
@@ -171,5 +238,36 @@ def run_simulations(mu_i, sigma_i, mu, L, N):
     mu_tilde_i = np.zeros((len(mu_i), 4, N))
     for i in range(0, N):
         mu_tilde_i[:, :, i] = single_simulation(mu_i, sigma_i, mu, L)
+    return mu_tilde_i
+
+def run_simulations_test_distances(mu_i, sigma_i, mu, L, N):
+    """
+    Function to run N simulations and compute the MAPE
+    for the 2 distances.
+    Input:
+      - mu_i: 1D numpy array, means of the RV
+      - sigma_i: 1D numpy array, standard deviations of the RV
+      - mu: scalar, the known value of the mean of the sum
+      - L: character, distribution to be used
+           (lognomal, ...)
+      - N: number of simulations
+    Output:
+      - mu_tilde_i: 3D numpy array, estimated means
+                    (dim1: number of random variables
+                     dim2: number of raking methods
+                     dim3: number of simulations)
+    """
+    assert isinstance(mu_i, np.ndarray), \
+        'Means should be a Numpy array'
+    assert isinstance(sigma_i, np.ndarray), \
+        'Standard deviations should be a Numpy array'
+    assert (len(mu_i) == len(sigma_i)), \
+        'Means and standard deviations arrays should have the same size'
+    assert L in ['lognormal'], \
+        'Only lognormal distribution is implemented'
+
+    mu_tilde_i = np.zeros((len(mu_i), 3, N))
+    for i in range(0, N):
+        mu_tilde_i[:, :, i] = single_simulation_test_distances(mu_i, sigma_i, mu, L)
     return mu_tilde_i
 
