@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    #vis.vega-embed {
+      width: 100%;
+      display: flex;
+    }
+
+    #vis.vega-embed details,
+    #vis.vega-embed details summary {
+      position: relative;
+    }
+  </style>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/vega@5"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/vega-lite@5.16.3"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/vega-embed@6"></script>
+</head>
+<body>
+  <div id="vis"></div>
+  <script>
+    (function(vegaEmbed) {
+      var spec = {"config": {"view": {"continuousWidth": 300, "continuousHeight": 300}, "axis": {"labelFontSize": 16, "titleFontSize": 16}, "header": {"labelFontSize": 16, "titleFontSize": 16}, "legend": {"labelFontSize": 16, "titleFontSize": 16}}, "data": {"name": "data-65c408e2a9bd8692c3c29e3ad18324c0"}, "mark": {"type": "bar"}, "encoding": {"color": {"field": "method", "legend": {"title": "Raking method"}, "type": "nominal"}, "column": {"field": "variable", "header": {"title": "Variable", "titleFontSize": 16}, "type": "ordinal"}, "x": {"axis": {"title": "Method"}, "field": "method", "type": "ordinal"}, "y": {"axis": {"title": "Mean Average Percentage Error"}, "field": "MAPE", "type": "quantitative"}}, "$schema": "https://vega.github.io/schema/vega-lite/v5.16.3.json", "datasets": {"data-65c408e2a9bd8692c3c29e3ad18324c0": [{"variable": 1, "true_mean": 0.1, "standard_deviation": 0.000390625, "method": "without_sigma", "MAPE": 0.15848712167520024}, {"variable": 2, "true_mean": 0.1, "standard_deviation": 0.00078125, "method": "without_sigma", "MAPE": 0.15874428123716716}, {"variable": 3, "true_mean": 0.1, "standard_deviation": 0.0015625, "method": "without_sigma", "MAPE": 0.15850567319213366}, {"variable": 4, "true_mean": 0.1, "standard_deviation": 0.003125, "method": "without_sigma", "MAPE": 0.1599968191082788}, {"variable": 5, "true_mean": 0.1, "standard_deviation": 0.00625, "method": "without_sigma", "MAPE": 0.15544927597608443}, {"variable": 6, "true_mean": 0.1, "standard_deviation": 0.0125, "method": "without_sigma", "MAPE": 0.1650368608952311}, {"variable": 7, "true_mean": 0.1, "standard_deviation": 0.025, "method": "without_sigma", "MAPE": 0.23470430019260285}, {"variable": 8, "true_mean": 0.1, "standard_deviation": 0.05, "method": "without_sigma", "MAPE": 0.3745517425366574}, {"variable": 9, "true_mean": 0.1, "standard_deviation": 0.1, "method": "without_sigma", "MAPE": 0.5705101180789108}, {"variable": 1, "true_mean": 0.1, "standard_deviation": 0.000390625, "method": "with_sigma", "MAPE": 0.004607643168661127}, {"variable": 2, "true_mean": 0.1, "standard_deviation": 0.00078125, "method": "with_sigma", "MAPE": 0.009505430930509281}, {"variable": 3, "true_mean": 0.1, "standard_deviation": 0.0015625, "method": "with_sigma", "MAPE": 0.018076172148851967}, {"variable": 4, "true_mean": 0.1, "standard_deviation": 0.003125, "method": "with_sigma", "MAPE": 0.03753351426005655}, {"variable": 5, "true_mean": 0.1, "standard_deviation": 0.00625, "method": "with_sigma", "MAPE": 0.06930276379970787}, {"variable": 6, "true_mean": 0.1, "standard_deviation": 0.0125, "method": "with_sigma", "MAPE": 0.13657506735272387}, {"variable": 7, "true_mean": 0.1, "standard_deviation": 0.025, "method": "with_sigma", "MAPE": 0.28609927858418643}, {"variable": 8, "true_mean": 0.1, "standard_deviation": 0.05, "method": "with_sigma", "MAPE": 0.475210553829539}, {"variable": 9, "true_mean": 0.1, "standard_deviation": 0.1, "method": "with_sigma", "MAPE": 0.5390178348846087}, {"variable": 1, "true_mean": 0.1, "standard_deviation": 0.000390625, "method": "with_sigma_complex", "MAPE": 0.005333796108781675}, {"variable": 2, "true_mean": 0.1, "standard_deviation": 0.00078125, "method": "with_sigma_complex", "MAPE": 0.010995045440165064}, {"variable": 3, "true_mean": 0.1, "standard_deviation": 0.0015625, "method": "with_sigma_complex", "MAPE": 0.020914988480635336}, {"variable": 4, "true_mean": 0.1, "standard_deviation": 0.003125, "method": "with_sigma_complex", "MAPE": 0.04348535979393078}, {"variable": 5, "true_mean": 0.1, "standard_deviation": 0.00625, "method": "with_sigma_complex", "MAPE": 0.08069421228099341}, {"variable": 6, "true_mean": 0.1, "standard_deviation": 0.0125, "method": "with_sigma_complex", "MAPE": 0.16013766709210342}, {"variable": 7, "true_mean": 0.1, "standard_deviation": 0.025, "method": "with_sigma_complex", "MAPE": 0.34180524310721905}, {"variable": 8, "true_mean": 0.1, "standard_deviation": 0.05, "method": "with_sigma_complex", "MAPE": 0.5384561318128677}, {"variable": 9, "true_mean": 0.1, "standard_deviation": 0.1, "method": "with_sigma_complex", "MAPE": 0.5919805839770943}]}};
+      var embedOpt = {"mode": "vega-lite"};
+
+      function showError(el, error){
+          el.innerHTML = ('<div style="color:red;">'
+                          + '<p>JavaScript Error: ' + error.message + '</p>'
+                          + "<p>This usually means there's a typo in your chart specification. "
+                          + "See the javascript console for the full traceback.</p>"
+                          + '</div>');
+          throw error;
+      }
+      const el = document.getElementById('vis');
+      vegaEmbed("#vis", spec, embedOpt)
+        .catch(error => showError(el, error));
+    })(vegaEmbed);
+
+  </script>
+</body>
+</html>
