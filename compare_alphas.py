@@ -128,7 +128,6 @@ names = ['alpha = 1',
          'alpha = -1',
          'alpha = -2']
 
-# To test the methods with the different values of alpha
 # Run simulations
 mu_tilde_i = run_simulations(mu_i, sigma_i, q_i, mu, L, N, alphas)
 

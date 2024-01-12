@@ -38,8 +38,8 @@ def single_simulation(mu_i, sigma_i, mu, L):
     x_i = generate_data(mu_i, sigma_i, L)
     v_i = np.ones(len(x_i))
     mu_tilde_i = np.zeros((len(x_i), 3))
-    mu_tilde_i[:, 1] = raking_chi2_distance(x_i, v_i, mu)
-    mu_tilde_i[:, 0] = raking_entropic_distance(x_i, v_i, mu)
+    mu_tilde_i[:, 0] = raking_chi2_distance(x_i, v_i, mu)
+    mu_tilde_i[:, 1] = raking_entropic_distance(x_i, v_i, mu)
     mu_tilde_i[:, 2] = raking_inverse_entropic_distance(x_i, v_i, mu)
     return mu_tilde_i
 
