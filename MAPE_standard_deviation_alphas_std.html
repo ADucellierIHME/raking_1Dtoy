@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    #vis.vega-embed {
+      width: 100%;
+      display: flex;
+    }
+
+    #vis.vega-embed details,
+    #vis.vega-embed details summary {
+      position: relative;
+    }
+  </style>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/vega@5"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/vega-lite@5.16.3"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/vega-embed@6"></script>
+</head>
+<body>
+  <div id="vis"></div>
+  <script>
+    (function(vegaEmbed) {
+      var spec = {"config": {"view": {"continuousWidth": 300, "continuousHeight": 300}, "axis": {"labelFontSize": 16, "titleFontSize": 16}, "legend": {"labelFontSize": 16, "titleFontSize": 16}}, "data": {"name": "data-b68f207f71dc829dd0132cc29a91a003"}, "mark": {"type": "line"}, "encoding": {"color": {"field": "method", "legend": {"title": "Raking method"}, "type": "nominal"}, "x": {"axis": {"title": "Standard deviation"}, "field": "standard_deviation", "type": "quantitative"}, "y": {"axis": {"title": "Mean Average Percentage Error"}, "field": "MAPE", "type": "quantitative"}}, "$schema": "https://vega.github.io/schema/vega-lite/v5.16.3.json", "datasets": {"data-b68f207f71dc829dd0132cc29a91a003": [{"variable": 1, "true_mean": 0.1, "standard_deviation": 0.000390625, "method": "alpha = 1", "MAPE": 0.08474327937959009}, {"variable": 2, "true_mean": 0.1, "standard_deviation": 0.00078125, "method": "alpha = 1", "MAPE": 0.08664584905701704}, {"variable": 3, "true_mean": 0.1, "standard_deviation": 0.0015625, "method": "alpha = 1", "MAPE": 0.09012804609923208}, {"variable": 4, "true_mean": 0.1, "standard_deviation": 0.003125, "method": "alpha = 1", "MAPE": 0.09897180587200057}, {"variable": 5, "true_mean": 0.1, "standard_deviation": 0.00625, "method": "alpha = 1", "MAPE": 0.11019975493262286}, {"variable": 6, "true_mean": 0.1, "standard_deviation": 0.0125, "method": "alpha = 1", "MAPE": 0.14918617413172255}, {"variable": 7, "true_mean": 0.1, "standard_deviation": 0.025, "method": "alpha = 1", "MAPE": 0.2548569613193377}, {"variable": 8, "true_mean": 0.1, "standard_deviation": 0.05, "method": "alpha = 1", "MAPE": 0.40492578014756303}, {"variable": 9, "true_mean": 0.1, "standard_deviation": 0.1, "method": "alpha = 1", "MAPE": 0.5145082556758767}, {"variable": 1, "true_mean": 0.1, "standard_deviation": 0.000390625, "method": "alpha = 0", "MAPE": 0.07821130806049725}, {"variable": 2, "true_mean": 0.1, "standard_deviation": 0.00078125, "method": "alpha = 0", "MAPE": 0.08006054854016835}, {"variable": 3, "true_mean": 0.1, "standard_deviation": 0.0015625, "method": "alpha = 0", "MAPE": 0.0834544943861384}, {"variable": 4, "true_mean": 0.1, "standard_deviation": 0.003125, "method": "alpha = 0", "MAPE": 0.09216161709453004}, {"variable": 5, "true_mean": 0.1, "standard_deviation": 0.00625, "method": "alpha = 0", "MAPE": 0.10372608991601721}, {"variable": 6, "true_mean": 0.1, "standard_deviation": 0.0125, "method": "alpha = 0", "MAPE": 0.14421562420519263}, {"variable": 7, "true_mean": 0.1, "standard_deviation": 0.025, "method": "alpha = 0", "MAPE": 0.2528342056166471}, {"variable": 8, "true_mean": 0.1, "standard_deviation": 0.05, "method": "alpha = 0", "MAPE": 0.4092880845454894}, {"variable": 9, "true_mean": 0.1, "standard_deviation": 0.1, "method": "alpha = 0", "MAPE": 0.5157927604720125}, {"variable": 1, "true_mean": 0.1, "standard_deviation": 0.000390625, "method": "alpha = -1/2", "MAPE": 0.07431750469767953}, {"variable": 2, "true_mean": 0.1, "standard_deviation": 0.00078125, "method": "alpha = -1/2", "MAPE": 0.07611612347066084}, {"variable": 3, "true_mean": 0.1, "standard_deviation": 0.0015625, "method": "alpha = -1/2", "MAPE": 0.07942228222440124}, {"variable": 4, "true_mean": 0.1, "standard_deviation": 0.003125, "method": "alpha = -1/2", "MAPE": 0.08796428569739938}, {"variable": 5, "true_mean": 0.1, "standard_deviation": 0.00625, "method": "alpha = -1/2", "MAPE": 0.09957200553309849}, {"variable": 6, "true_mean": 0.1, "standard_deviation": 0.0125, "method": "alpha = -1/2", "MAPE": 0.14059196189214407}, {"variable": 7, "true_mean": 0.1, "standard_deviation": 0.025, "method": "alpha = -1/2", "MAPE": 0.25037354661907923}, {"variable": 8, "true_mean": 0.1, "standard_deviation": 0.05, "method": "alpha = -1/2", "MAPE": 0.411213355105916}, {"variable": 9, "true_mean": 0.1, "standard_deviation": 0.1, "method": "alpha = -1/2", "MAPE": 0.5151736466542784}, {"variable": 1, "true_mean": 0.1, "standard_deviation": 0.000390625, "method": "alpha = -1", "MAPE": 0.06980228474830363}, {"variable": 2, "true_mean": 0.1, "standard_deviation": 0.00078125, "method": "alpha = -1", "MAPE": 0.07152802786255731}, {"variable": 3, "true_mean": 0.1, "standard_deviation": 0.0015625, "method": "alpha = -1", "MAPE": 0.07470137573085105}, {"variable": 4, "true_mean": 0.1, "standard_deviation": 0.003125, "method": "alpha = -1", "MAPE": 0.08297826883784484}, {"variable": 5, "true_mean": 0.1, "standard_deviation": 0.00625, "method": "alpha = -1", "MAPE": 0.09457352539418058}, {"variable": 6, "true_mean": 0.1, "standard_deviation": 0.0125, "method": "alpha = -1", "MAPE": 0.13588192920246642}, {"variable": 7, "true_mean": 0.1, "standard_deviation": 0.025, "method": "alpha = -1", "MAPE": 0.24626317429886468}, {"variable": 8, "true_mean": 0.1, "standard_deviation": 0.05, "method": "alpha = -1", "MAPE": 0.41249562977478477}, {"variable": 9, "true_mean": 0.1, "standard_deviation": 0.1, "method": "alpha = -1", "MAPE": 0.5155997945300926}, {"variable": 1, "true_mean": 0.1, "standard_deviation": 0.000390625, "method": "alpha = -2", "MAPE": null}, {"variable": 2, "true_mean": 0.1, "standard_deviation": 0.00078125, "method": "alpha = -2", "MAPE": null}, {"variable": 3, "true_mean": 0.1, "standard_deviation": 0.0015625, "method": "alpha = -2", "MAPE": null}, {"variable": 4, "true_mean": 0.1, "standard_deviation": 0.003125, "method": "alpha = -2", "MAPE": null}, {"variable": 5, "true_mean": 0.1, "standard_deviation": 0.00625, "method": "alpha = -2", "MAPE": null}, {"variable": 6, "true_mean": 0.1, "standard_deviation": 0.0125, "method": "alpha = -2", "MAPE": null}, {"variable": 7, "true_mean": 0.1, "standard_deviation": 0.025, "method": "alpha = -2", "MAPE": null}, {"variable": 8, "true_mean": 0.1, "standard_deviation": 0.05, "method": "alpha = -2", "MAPE": null}, {"variable": 9, "true_mean": 0.1, "standard_deviation": 0.1, "method": "alpha = -2", "MAPE": null}]}};
+      var embedOpt = {"mode": "vega-lite"};
+
+      function showError(el, error){
+          el.innerHTML = ('<div style="color:red;">'
+                          + '<p>JavaScript Error: ' + error.message + '</p>'
+                          + "<p>This usually means there's a typo in your chart specification. "
+                          + "See the javascript console for the full traceback.</p>"
+                          + '</div>');
+          throw error;
+      }
+      const el = document.getElementById('vis');
+      vegaEmbed("#vis", spec, embedOpt)
+        .catch(error => showError(el, error));
+    })(vegaEmbed);
+
+  </script>
+</body>
+</html>

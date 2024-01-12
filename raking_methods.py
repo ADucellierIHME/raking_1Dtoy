@@ -162,11 +162,12 @@ def raking_inverse_entropic_distance(x_i, v_i, mu):
     mu_i = x_i / (1 + v_i * lambda_k)
     return mu_i
 
-def raking_general_distance(x_i, q_i, alpha, mu):
+def raking_general_distance(x_i, v_i, q_i, alpha, mu):
     """
     Raking using the general distance 1/alpha (x/alpha+1 (mu/x)^alpha+1 - mu + cte)
     Input:
       x_i: 1D Numpy array, observed values
+      v_i: 1D Numpy array, weights for the linear constraint (usually 1)
       q_i: 1D Numpy array, weights for the observations
       alpha: scalar, parameter for the distance
       mu: scalar, sum of raked observations
@@ -175,30 +176,34 @@ def raking_general_distance(x_i, q_i, alpha, mu):
     """
     assert isinstance(x_i, np.ndarray), \
         'Observations should be a Numpy array.'
+    assert isinstance(v_i, np.ndarray), \
+        'Linear weights should be a Numpy array.'
     assert isinstance(q_i, np.ndarray), \
         'Weights should be a Numpy array.'
+    assert len(x_i) == len(v_i), \
+        'Observations and linear weights arrays should have the same size.'
     assert len(x_i) == len(q_i), \
         'Observations and weights arrays should have the same size.'
 
     # Root find problem to get lambda
     
     epsilon = 1
-    lambda_k = -0.1
+    lambda_k = 0.1
     while epsilon > 1.0e-5:
         if alpha == 0:
-            f0 = mu - np.sum(x_i * np.exp(- q_i * lambda_k))
-            f1 = np.sum(x_i * q_i * np.exp(- q_i * lambda_k))
+            f0 = mu - np.sum(v_i * x_i * np.exp(q_i * v_i * lambda_k))
+            f1 = - np.sum(x_i * np.square(v_i) * q_i * np.exp(q_i * v_i * lambda_k))
         elif alpha == 1:
-            f0 = mu - np.sum(x_i * (1 - q_i * lambda_k))
-            f1 = np.sum(x_i * q_i)
+            f0 = mu - np.sum(v_i * x_i * (1 + q_i * v_i * lambda_k))
+            f1 = - np.sum(x_i * np.square(v_i) * q_i)
         else:
-            f0 = mu - np.sum(x_i * np.power(1 - alpha * q_i * lambda_k, 1.0 / alpha))
-            f1 = np.sum(x_i * q_i * np.power(1 - alpha * q_i * lambda_k, 1.0 / alpha - 1.0))
+            f0 = mu - np.sum(v_i * x_i * np.power(1 + alpha * q_i * v_i * lambda_k, 1.0 / alpha))
+            f1 = - np.sum(x_i * np.square(v_i) * q_i * np.power(1 + alpha * q_i * v_i * lambda_k, 1.0 / alpha - 1.0))
         lambda_k = lambda_k - f0 / f1
         epsilon = abs(f0 / f1)
     if alpha == 0:
-        mu_i = x_i * np.exp(-q_i * lambda_k)
+        mu_i = x_i * np.exp(q_i * v_i * lambda_k)
     else:
-        mu_i = x_i * np.power(1 - alpha * q_i * lambda_k, 1.0 / alpha)
+        mu_i = x_i * np.power(1 + alpha * q_i * v_i * lambda_k, 1.0 / alpha)
     return mu_i
 
