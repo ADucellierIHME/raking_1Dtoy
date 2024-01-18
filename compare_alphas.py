@@ -6,6 +6,7 @@ using different values of the parameter alpha.
 """
 
 import altair as alt
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
@@ -162,16 +163,16 @@ names = ['alpha = 1',
          'alpha = -2']
 
 # Run simulations
-mu_tilde_i = run_simulations(mu_i, sigma_i, v_i, q_i, mu, L, N, alphas)
+#mu_tilde_i = run_simulations(mu_i, sigma_i, v_i, q_i, mu, L, N, alphas)
 
 # Compute MAPES
-(error, error_mean) = compute_MAPEs(mu_i, mu_tilde_i)
+#(error, error_mean) = compute_MAPEs(mu_i, mu_tilde_i)
 
 # Create pandas dataframe to store and plot the results
-df = gather_MAPE(mu_i, sigma_i, error, names)
+#df = gather_MAPE(mu_i, sigma_i, error, names)
 
 # Plot MAPE
-plot_MAPE(df, 'alphas_std')
+#plot_MAPE(df, 'alphas_std')
 
 # Second simulation: Different means, same standard deviations
 # Weight is equal to mu
@@ -199,14 +200,65 @@ names = ['alpha = 1',
          'alpha = -2']
 
 # Run simulations
-mu_tilde_i = run_simulations(mu_i, sigma_i, v_i, q_i, mu, L, N, alphas)
+#mu_tilde_i = run_simulations(mu_i, sigma_i, v_i, q_i, mu, L, N, alphas)
 
 # Compute MAPES
-(error, error_mean) = compute_MAPEs(mu_i, mu_tilde_i)
+#(error, error_mean) = compute_MAPEs(mu_i, mu_tilde_i)
 
 # Create pandas dataframe to store and plot the results
-df = gather_MAPE(mu_i, sigma_i, error, names)
+#df = gather_MAPE(mu_i, sigma_i, error, names)
 
 # Plot MAPE
-plot_MAPE_mean(df, 'alphas_mean')
+#plot_MAPE_mean(df, 'alphas_mean')
 
+# Third simulation: Generate voluntary wrong data
+# and see how much raking decreases the error
+# Number of variables
+n = 20
+
+# Generating means uniformly between 0.6 and 0.8
+mu_i = np.random.uniform(0.6, 0.8, n)
+
+# Generating multipliers between 0.1 and 0.8
+multipliers = np.linspace(0.1, 0.8, n)
+
+# Generating one set of observations as means multiplied by the multipliers
+x_i = mu_i * multipliers
+
+# Calculate weights
+q_i = 1.0 / (0.1 + multipliers)
+
+# Rake to the true sum of means
+mu = np.sum(mu_i)
+v_i = np.ones(n)
+
+# Choose values for alpha
+alphas = [1, 0, -0.5, -1]
+
+mu_tilde_i = np.zeros((n, len(alphas)))
+for index, alpha in enumerate(alphas):
+    mu_tilde_i[:, index] = raking_general_distance(x_i, v_i, q_i, alpha, mu)
+
+# Plotting the true means, original observations, and raked observations
+plt.figure(figsize=(12, 6))
+
+# True means in black
+plt.scatter(np.arange(n), mu_i, color='black', marker='o', label='True Means')
+
+# Original observations in red
+plt.scatter(np.arange(n), x_i, color='black', marker='x', label='Original Observations')
+
+# Raked observations
+plt.scatter(np.arange(n), mu_tilde_i[:, 0], color='blue', marker='x', label='alpha = 1')
+plt.scatter(np.arange(n), mu_tilde_i[:, 1], color='green', marker='x', label='alpha = 0')
+plt.scatter(np.arange(n), mu_tilde_i[:, 2], color='yellow', marker='x', label='alpha = -1/2')
+plt.scatter(np.arange(n), mu_tilde_i[:, 3], color='orange', marker='x', label='alpha = -1')
+#lt.scatter(np.arange(n), mu_tilde_i[:, 4], color='red', marker='x', label='alpha = -2')
+
+plt.title('Comparison of True Means, Original Observations, and Raked Observations')
+plt.xlabel('Variables')
+plt.ylabel('Values')
+plt.xticks(np.arange(n), labels=[f"{multiplier:.2f}" for multiplier in multipliers])
+plt.legend()
+plt.grid(True)
+plt.savefig('compare_raked_observations.png')

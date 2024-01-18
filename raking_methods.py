@@ -188,22 +188,22 @@ def raking_general_distance(x_i, v_i, q_i, alpha, mu):
     # Root find problem to get lambda
     
     epsilon = 1
-    lambda_k = 0.1
+    lambda_k = (np.sum(v_i * x_i) - mu) / np.sum(x_i * np.square(v_i) * q_i)
     while epsilon > 1.0e-5:
         if alpha == 0:
-            f0 = mu - np.sum(v_i * x_i * np.exp(q_i * v_i * lambda_k))
-            f1 = - np.sum(x_i * np.square(v_i) * q_i * np.exp(q_i * v_i * lambda_k))
+            f0 = mu - np.sum(v_i * x_i * np.exp(- q_i * v_i * lambda_k))
+            f1 = np.sum(x_i * np.square(v_i) * q_i * np.exp(- q_i * v_i * lambda_k))
         elif alpha == 1:
-            f0 = mu - np.sum(v_i * x_i * (1 + q_i * v_i * lambda_k))
-            f1 = - np.sum(x_i * np.square(v_i) * q_i)
+            f0 = mu - np.sum(v_i * x_i * (1 - q_i * v_i * lambda_k))
+            f1 = np.sum(x_i * np.square(v_i) * q_i)
         else:
-            f0 = mu - np.sum(v_i * x_i * np.power(1 + alpha * q_i * v_i * lambda_k, 1.0 / alpha))
-            f1 = - np.sum(x_i * np.square(v_i) * q_i * np.power(1 + alpha * q_i * v_i * lambda_k, 1.0 / alpha - 1.0))
+            f0 = mu - np.sum(v_i * x_i * np.power(1 - alpha * q_i * v_i * lambda_k, 1.0 / alpha))
+            f1 = np.sum(x_i * np.square(v_i) * q_i * np.power(1 - alpha * q_i * v_i * lambda_k, 1.0 / alpha - 1.0))
         lambda_k = lambda_k - f0 / f1
         epsilon = abs(f0 / f1)
     if alpha == 0:
-        mu_i = x_i * np.exp(q_i * v_i * lambda_k)
+        mu_i = x_i * np.exp(- q_i * v_i * lambda_k)
     else:
-        mu_i = x_i * np.power(1 + alpha * q_i * v_i * lambda_k, 1.0 / alpha)
+        mu_i = x_i * np.power(1 - alpha * q_i * v_i * lambda_k, 1.0 / alpha)
     return mu_i
 
