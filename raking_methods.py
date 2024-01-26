@@ -162,7 +162,7 @@ def raking_inverse_entropic_distance(x_i, v_i, mu):
     mu_i = x_i / (1 + v_i * lambda_k)
     return mu_i
 
-def raking_general_distance(x_i, v_i, q_i, alpha, mu):
+def raking_general_distance(x_i, v_i, q_i, alpha, mu, max_iter=500):
     """
     Raking using the general distance 1/alpha (x/alpha+1 (mu/x)^alpha+1 - mu + cte)
     Input:
@@ -186,24 +186,54 @@ def raking_general_distance(x_i, v_i, q_i, alpha, mu):
         'Observations and weights arrays should have the same size.'
 
     # Root find problem to get lambda
-    
-    epsilon = 1
+
+    # Initialization with the value of lambda for alpha = 1
     lambda_k = (np.sum(v_i * x_i) - mu) / np.sum(x_i * np.square(v_i) * q_i)
-    while epsilon > 1.0e-5:
-        if alpha == 0:
-            f0 = mu - np.sum(v_i * x_i * np.exp(- q_i * v_i * lambda_k))
-            f1 = np.sum(x_i * np.square(v_i) * q_i * np.exp(- q_i * v_i * lambda_k))
-        elif alpha == 1:
-            f0 = mu - np.sum(v_i * x_i * (1 - q_i * v_i * lambda_k))
-            f1 = np.sum(x_i * np.square(v_i) * q_i)
-        else:
-            f0 = mu - np.sum(v_i * x_i * np.power(1 - alpha * q_i * v_i * lambda_k, 1.0 / alpha))
-            f1 = np.sum(x_i * np.square(v_i) * q_i * np.power(1 - alpha * q_i * v_i * lambda_k, 1.0 / alpha - 1.0))
-        lambda_k = lambda_k - f0 / f1
-        epsilon = abs(f0 / f1)
+
+    # If alpha = 1, we have a direct solution for lambda
+    if alpha != 1:
+        # Verify that we start with a valid value for lambda
+        # This could be a problem only if alpha > 0.5 or alpha < -1
+        if (alpha > 0.5) or (alpha < -1.0):
+            gamma = 1.0
+            iter_gam = 0
+            while (np.any(1 - gamma * alpha * q_i * v_i * lambda_k <= 0.0)) & \
+                  (iter_gam < max_iter):
+                gamma = gamma / 2.0
+                iter_gam = iter_gam + 1
+            lambda_k = gamma * lambda_k
+        # Loop until there is no more changes in the value of lambda
+        epsilon = 1
+        iter_eps = 0
+        while (epsilon > 1.0e-10) & (iter_eps < max_iter):
+            if alpha == 0:
+                f0 = mu - np.sum(v_i * x_i * np.exp(- q_i * v_i * lambda_k))
+                f1 = np.sum(x_i * np.square(v_i) * q_i * np.exp(- q_i * v_i * lambda_k))
+            else:
+                f0 = mu - np.sum(v_i * x_i * np.power(1 - alpha * q_i * v_i * lambda_k, 1.0 / alpha))
+                f1 = np.sum(x_i * np.square(v_i) * q_i * np.power(1 - alpha * q_i * v_i * lambda_k, 1.0 / alpha - 1.0))
+            # Make sure that the new value of lambda is still valid
+            # This could be a problem only if alpha > 0.5 or alpha < -1
+            if (alpha > 0.5) or (alpha < -1.0):
+                gamma = 1.0
+                iter_gam = 0
+                while (np.any(1 - alpha * q_i * v_i * (lambda_k - gamma * f0 / f1) <= 0.0)) & \
+                      (iter_gam < max_iter):
+                    gamma = gamma / 2.0
+                    iter_gam = iter_gam + 1
+            else:
+                gamma = 1.0
+            epsilon = abs(gamma * f0 / (f1 * lambda_k))
+            iter_eps = iter_eps + 1
+            lambda_k = lambda_k - gamma * f0 / f1
+
+    # Compute the raked values from the value of lambda
     if alpha == 0:
         mu_i = x_i * np.exp(- q_i * v_i * lambda_k)
     else:
         mu_i = x_i * np.power(1 - alpha * q_i * v_i * lambda_k, 1.0 / alpha)
+    # Check the margin
+    if abs((mu - np.sum(mu_i)) / mu) > 1.0e-5:
+        print('The raked values do not sum to the margin.')
     return mu_i
 

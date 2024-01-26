@@ -163,16 +163,16 @@ names = ['alpha = 1',
          'alpha = -2']
 
 # Run simulations
-#mu_tilde_i = run_simulations(mu_i, sigma_i, v_i, q_i, mu, L, N, alphas)
+mu_tilde_i = run_simulations(mu_i, sigma_i, v_i, q_i, mu, L, N, alphas)
 
 # Compute MAPES
-#(error, error_mean) = compute_MAPEs(mu_i, mu_tilde_i)
+(error, error_mean) = compute_MAPEs(mu_i, mu_tilde_i)
 
 # Create pandas dataframe to store and plot the results
-#df = gather_MAPE(mu_i, sigma_i, error, names)
+df = gather_MAPE(mu_i, sigma_i, error, names)
 
 # Plot MAPE
-#plot_MAPE(df, 'alphas_std')
+plot_MAPE(df, 'alphas_std')
 
 # Second simulation: Different means, same standard deviations
 # Weight is equal to mu
@@ -200,16 +200,16 @@ names = ['alpha = 1',
          'alpha = -2']
 
 # Run simulations
-#mu_tilde_i = run_simulations(mu_i, sigma_i, v_i, q_i, mu, L, N, alphas)
+mu_tilde_i = run_simulations(mu_i, sigma_i, v_i, q_i, mu, L, N, alphas)
 
 # Compute MAPES
-#(error, error_mean) = compute_MAPEs(mu_i, mu_tilde_i)
+(error, error_mean) = compute_MAPEs(mu_i, mu_tilde_i)
 
 # Create pandas dataframe to store and plot the results
-#df = gather_MAPE(mu_i, sigma_i, error, names)
+df = gather_MAPE(mu_i, sigma_i, error, names)
 
 # Plot MAPE
-#plot_MAPE_mean(df, 'alphas_mean')
+plot_MAPE_mean(df, 'alphas_mean')
 
 # Third simulation: Generate voluntary wrong data
 # and see how much raking decreases the error
@@ -233,7 +233,7 @@ mu = np.sum(mu_i)
 v_i = np.ones(n)
 
 # Choose values for alpha
-alphas = [1, 0, -0.5, -1]
+alphas = [1, 0, -0.5, -1, -2]
 
 mu_tilde_i = np.zeros((n, len(alphas)))
 for index, alpha in enumerate(alphas):
@@ -253,12 +253,13 @@ plt.scatter(np.arange(n), mu_tilde_i[:, 0], color='blue', marker='x', label='alp
 plt.scatter(np.arange(n), mu_tilde_i[:, 1], color='green', marker='x', label='alpha = 0')
 plt.scatter(np.arange(n), mu_tilde_i[:, 2], color='yellow', marker='x', label='alpha = -1/2')
 plt.scatter(np.arange(n), mu_tilde_i[:, 3], color='orange', marker='x', label='alpha = -1')
-#lt.scatter(np.arange(n), mu_tilde_i[:, 4], color='red', marker='x', label='alpha = -2')
+plt.scatter(np.arange(n), mu_tilde_i[:, 4], color='red', marker='x', label='alpha = -2')
 
 plt.title('Comparison of True Means, Original Observations, and Raked Observations')
 plt.xlabel('Variables')
 plt.ylabel('Values')
 plt.xticks(np.arange(n), labels=[f"{multiplier:.2f}" for multiplier in multipliers])
+#plt.ylim([-0.5, 1.5])
 plt.legend()
 plt.grid(True)
 plt.savefig('compare_raked_observations.png')
