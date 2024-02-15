@@ -10,7 +10,7 @@ import pandas as pd
 
 from analyze_experiment import compute_MAPEs, gather_MAPE, plot_MAPE
 from generate_data import generate_data
-from raking_methods import raking_without_sigma, raking_with_sigma, raking_with_sigma_complex
+from raking_uncertainty import raking_without_sigma, raking_with_sigma, raking_with_sigma_complex
 
 def single_simulation(mu_i, sigma_i, mu, L):
     """
