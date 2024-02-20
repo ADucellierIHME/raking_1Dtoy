@@ -131,7 +131,7 @@ def raking_inverse_chi2_distance(x_i, q_i, v_i, mu, max_iter=500):
         f2 = np.sum(q_i * np.square(v_i) * x_i / np.power(1 + 2 * q_i * v_i * lambda_k, 1.5))
         gamma = 1.0
         iter_gam = 0
-        while (np.any(1 + 2 * q_i * vi * (lambda_k - gamma * f1 / f2) <= 0.0)) & \
+        while (np.any(1 + 2 * q_i * v_i * (lambda_k - gamma * f1 / f2) <= 0.0)) & \
             (iter_gam < max_iter):
                 gamma = gamma / 2.0
                 iter_gam = iter_gam + 1
@@ -185,13 +185,13 @@ def raking_general_distance(x_i, q_i, v_i, alpha, mu, max_iter=500):
                     iter_gam = iter_gam + 1
             else:
                 gamma = 1.0
-            lambda_k = lambda_k - gamma * f0 / f1
+            lambda_k = lambda_k - gamma * f1 / f2
             epsilon = gamma * abs(f1 / f2)
             iter_eps = iter_eps + 1
-    if alpha == 0:
-        mu_i = x_i * np.exp(- q_i * v_i * lambda_k)
-    else:
-        mu_i = x_i * np.power(1 - alpha * q_i * v_i * lambda_k, 1.0 / alpha)
+        if alpha == 0:
+            mu_i = x_i * np.exp(- q_i * v_i * lambda_k)
+        else:
+            mu_i = x_i * np.power(1 - alpha * q_i * v_i * lambda_k, 1.0 / alpha)
     return mu_i
 
 def raking_l2_distance(x_i, q_i, v_i, mu):
@@ -260,9 +260,9 @@ def raking_logit(x_i, l_i, h_i, q_i, v_i, mu, max_iter=500):
         f1 = mu - np.sum(v_i * (l_i * (h_i - x_i) + \
             h_i * (x_i - l_i) * np.exp(- q_i * v_i * lambda_k)) / \
             ((h_i - x_i) + (x_i - l_i) * np.exp(- q_i * v_i * lambda_k)))
-        f2 = np.sum(q_i * np.square(v_i) * ((x - l) * (h - x) * (h - l) * \
+        f2 = np.sum(q_i * np.square(v_i) * ((x_i - l_i) * (h_i - x_i) * (h_i - l_i) * \
             np.exp(- q_i * v_i * lambda_k)) / \
-            np.square((h - x) + (x - l) * np.exp(- q_i * v_i * lambda_k)))  
+            np.square((h_i - x_i) + (x_i - l_i) * np.exp(- q_i * v_i * lambda_k)))  
         lambda_k = lambda_k - f1 / f2
         epsilon = abs(f1 / f2)
         iter_eps = iter_eps + 1

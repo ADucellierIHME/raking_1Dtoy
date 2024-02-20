@@ -1,8 +1,13 @@
 """
 Python scripts to run experiment where all the random variables
 have the same mean but different standard deviations.
-We test several distances for the objective function: chi-square,
-entropic distance, inverse entropic distance.
+We test several distances for the objective function:
+  - chi-square distance
+  - entropic distance
+  - inverse entropic distance
+  - inverse chi square distance
+  - l2 distance
+  - logit raking
 """
 
 import numpy as np
@@ -10,7 +15,12 @@ import pandas as pd
 
 from analyze_experiment import compute_MAPEs, gather_MAPE, plot_MAPE
 from generate_data import generate_data
-from raking_methods import raking_chi2_distance, raking_entropic_distance, raking_inverse_entropic_distance
+from raking_methods_1D import raking_chi2_distance
+from raking_methods_1D import raking_entropic_distance
+from raking_methods_1D import raking_inverse_entropic_distance
+from raking_methods_1D import raking_inverse_chi2_distance
+from raking_methods_1D import raking_l2_distance
+from raking_methods_1D import raking_logit
 
 def single_simulation(mu_i, sigma_i, mu, L):
     """
@@ -36,17 +46,24 @@ def single_simulation(mu_i, sigma_i, mu, L):
         'Only lognormal distribution is implemented.'
 
     x_i = generate_data(mu_i, sigma_i, L)
+    q_i = np.ones(len(x_i))
     v_i = np.ones(len(x_i))
-    mu_tilde_i = np.zeros((len(x_i), 3))
-    mu_tilde_i[:, 0] = raking_chi2_distance(x_i, v_i, mu)
-    mu_tilde_i[:, 1] = raking_entropic_distance(x_i, v_i, mu)
-    mu_tilde_i[:, 2] = raking_inverse_entropic_distance(x_i, v_i, mu)
+    l_i = 0.5 * x_i
+    h_i = 2 * x_i
+    mu_tilde_i = np.zeros((len(x_i), 6))
+    mu_tilde_i[:, 0] = raking_chi2_distance(x_i, q_i, v_i, mu)
+    mu_tilde_i[:, 1] = raking_entropic_distance(x_i, q_i, v_i, mu)
+    mu_tilde_i[:, 2] = raking_inverse_entropic_distance(x_i, q_i, v_i, mu)
+    mu_tilde_i[:, 3] = raking_inverse_chi2_distance(x_i, q_i, v_i, mu)
+    mu_tilde_i[:, 4] = raking_l2_distance(x_i, q_i, v_i, mu)
+    mu_tilde_i[:, 5] = raking_logit(x_i, l_i, h_i, q_i, v_i, mu)
+
     return mu_tilde_i
 
 def run_simulations(mu_i, sigma_i, mu, L, N):
     """
     Function to run N simulations and compute the MAPE
-    for the 3 distances.
+    for the 6 distances.
     Input:
       - mu_i: 1D Numpy array, means of the RV
       - sigma_i: 1D Numpy array, standard deviations of the RV
@@ -69,7 +86,7 @@ def run_simulations(mu_i, sigma_i, mu, L, N):
     assert L in ['lognormal'], \
         'Only lognormal distribution is implemented.'
 
-    mu_tilde_i = np.zeros((len(mu_i), 3, N))
+    mu_tilde_i = np.zeros((len(mu_i), 6, N))
     for i in range(0, N):
         mu_tilde_i[:, :, i] = single_simulation(mu_i, sigma_i, mu, L)
     return mu_tilde_i
@@ -90,9 +107,12 @@ L = 'lognormal'
 N = 500
 
 # Define names of raking methods
-names = ['chi-square',
-         'entropic_distance',
-         'inverse_entropic_distance']
+names = ['chi2_distance', \
+         'entropic_distance', \
+         'inverse_entropic_distance', \
+         'inverse_chi2_distance', \
+         'l2_distance', \
+         'logit']
 
 # Run simulations
 mu_tilde_i = run_simulations(mu_i, sigma_i, mu, L, N)

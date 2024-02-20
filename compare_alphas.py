@@ -12,7 +12,7 @@ import pandas as pd
 
 from analyze_experiment import compute_MAPEs, gather_MAPE, plot_MAPE
 from generate_data import generate_data
-from raking_methods import raking_general_distance
+from raking_methods_1D import raking_general_distance
 
 def single_simulation(mu_i, sigma_i, v_i, q_i, mu, L, alphas):
     """
