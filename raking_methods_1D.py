@@ -64,7 +64,37 @@ def raking_entropic_distance(x_i, q_i, v_i, mu, max_iter=500):
         iter_eps = iter_eps + 1
     mu_i = x_i * np.exp(- q_i * v_i * lambda_k)
     return mu_i
-    
+
+def raking_vectorized_entropic_distance(df, agg_var, constant_vars=[]):
+    """
+    Raking using the entropic distance mu log(mu/x) + x - mu.
+    Input:
+      df: Pandas dataframe, containing the columns:
+          - value = Values to be raked
+          - agg_var = Variable over which we want to rake.
+          - constant_vars = Several other variables (not to be raked).
+          - all_'agg_var'_value = Partial sums
+      agg_var: String, variable over which we do the raking
+      constant_vars: List of strings, several other variables (not to be raked).
+    Output:
+      df: Pandas dataframe with another additional column value_raked
+    """
+    assert 'value' in df.columns, \
+        'The dataframe should contain a column with the values to be raked.'
+    assert agg_var in df.columns, \
+        'The dataframe should contain a column with the variable over which to do the raking.'
+    assert 'all_' + agg_var + '_value' in df.columns, \
+        'The dataframe should contain a column with the values to be raked.' 
+    if len(constant_vars) > 0:
+        for var in constant_vars:
+            assert var in df.columns, \
+                'The dataframe should contain a column ' + var + '.'
+    name1 = agg_var + '_total'
+    name2 = 'all_' + agg_var + '_value'
+    df[name1] = df.groupby(constant_vars).value.transform('sum')
+    df['value_raked'] = df['value'] * df[name2] / df[name1]
+    return df
+
 def raking_inverse_entropic_distance(x_i, q_i, v_i, mu, max_iter=500):
     """
     Raking using the inverse entropic distance x log(x/mu) + mu - x.
@@ -219,6 +249,37 @@ def raking_l2_distance(x_i, q_i, v_i, mu):
     lambda_k = (np.sum(v_i * x_i) - mu) / np.sum(q_i * np.square(v_i))
     mu_i = x_i - q_i * v_i * lambda_k
     return mu_i
+
+def raking_vectorized_l2_distance(df, agg_var, constant_vars=[]):
+    """
+    Raking using the l2 distance (mu - x)^2 / 2.
+    Input:
+      df: Pandas dataframe, containing the columns:
+          - value = Values to be raked
+          - agg_var = Variable over which we want to rake.
+          - constant_vars = Several other variables (not to be raked).
+          - all_'agg_var'_value = Partial sums
+      agg_var: String, variable over which we do the raking
+      constant_vars: List of strings, several other variables (not to be raked).
+    Output:
+      df: Pandas dataframe with another additional column value_raked
+    """
+    assert 'value' in df.columns, \
+        'The dataframe should contain a column with the values to be raked.'
+    assert agg_var in df.columns, \
+        'The dataframe should contain a column with the variable over which to do the raking.'
+    assert 'all_' + agg_var + '_value' in df.columns, \
+        'The dataframe should contain a column with the values to be raked.' 
+    if len(constant_vars) > 0:
+        for var in constant_vars:
+            assert var in df.columns, \
+                'The dataframe should contain a column ' + var + '.'
+    name1 = agg_var + '_total'
+    name2 = 'all_' + agg_var + '_value'
+    I = len(df[agg_var].unique().tolist())
+    df[name1] = df.groupby(constant_vars).value.transform('sum')
+    df['value_raked'] = df['value'] - (df[name1] - df[name2]) / I
+    return df
 
 def raking_logit(x_i, l_i, h_i, q_i, v_i, mu, max_iter=500):
     """
