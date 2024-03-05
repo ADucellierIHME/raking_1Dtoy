@@ -84,11 +84,12 @@ def raking_vectorized_entropic_distance(df, agg_var, constant_vars=[]):
     assert agg_var in df.columns, \
         'The dataframe should contain a column with the variable over which to do the raking.'
     assert 'all_' + agg_var + '_value' in df.columns, \
-        'The dataframe should contain a column with the values to be raked.' 
+        'The dataframe should contain a column with the margins.' 
     if len(constant_vars) > 0:
         for var in constant_vars:
             assert var in df.columns, \
                 'The dataframe should contain a column ' + var + '.'
+
     name1 = agg_var + '_total'
     name2 = 'all_' + agg_var + '_value'
     df[name1] = df.groupby(constant_vars).value.transform('sum')
@@ -269,11 +270,12 @@ def raking_vectorized_l2_distance(df, agg_var, constant_vars=[]):
     assert agg_var in df.columns, \
         'The dataframe should contain a column with the variable over which to do the raking.'
     assert 'all_' + agg_var + '_value' in df.columns, \
-        'The dataframe should contain a column with the values to be raked.' 
+        'The dataframe should contain a column with the margins.' 
     if len(constant_vars) > 0:
         for var in constant_vars:
             assert var in df.columns, \
                 'The dataframe should contain a column ' + var + '.'
+
     name1 = agg_var + '_total'
     name2 = 'all_' + agg_var + '_value'
     I = len(df[agg_var].unique().tolist())
