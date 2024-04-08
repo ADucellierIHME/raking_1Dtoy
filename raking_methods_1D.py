@@ -4,7 +4,7 @@ This module implements the different raking methods in 1D.
 
 import numpy as np
 
-def raking_chi2_distance(x_i, q_i, v_i, mu):
+def raking_chi2_distance(x_i, q_i, v_i, mu, direct=True):
     """
     Raking using the chi2 distance (mu - x)^2 / 2x.
     Input:
@@ -12,6 +12,8 @@ def raking_chi2_distance(x_i, q_i, v_i, mu):
       q_i: 1D Numpy array, weights for the observations
       v_i: 1D Numpy array, weights for the linear constraint (usually 1)
       mu: scalar, total of the linear constraint
+      direct: boolean, if True, we solve for lambda and compute mu;
+          if False, we solve directly for lambda and mu
     Output:
       mu_i: 1D Numpy array, raked values
     """
@@ -26,11 +28,55 @@ def raking_chi2_distance(x_i, q_i, v_i, mu):
     assert len(x_i) == len(v_i), \
         'The number of coefficients for the linear constraints should be equal to the number of observations.'
 
-    lambda_k = (np.sum(v_i * x_i) - mu) / np.sum(q_i * np.square(v_i) * x_i)
-    mu_i = x_i * (1 - q_i * v_i * lambda_k)
+    if direct:
+        lambda_k = (np.sum(v_i * x_i) - mu) / np.sum(q_i * np.square(v_i) * x_i)
+        mu_i = x_i * (1.0 - q_i * v_i * lambda_k)
+    else:
+        Phi = np.concatenate((np.concatenate((np.diag(1.0 / x_i), \
+            (q_i * v_i).reshape((-1, 1))), axis=1), \
+            np.array(v_i.tolist() + [0.0]).reshape((-1.0, len(v_i) + 1))), axis=0)
+        y = np.array(np.repeat(1.0, len(x_i)).tolist() + [mu])
+        result = np.linalg.solve(Phi, y)
+        mu_i = result[0:-1]
     return mu_i
 
-def raking_entropic_distance(x_i, q_i, v_i, mu, max_iter=500):
+def raking_l2_distance(x_i, q_i, v_i, mu, direct=True):
+    """
+    Raking using the l2 distance (mu - x)^2 / 2.
+    Input:
+      x_i: 1D Numpy array, observed values
+      q_i: 1D Numpy array, weights for the observations
+      v_i: 1D Numpy array, weights for the linear constraint (usually 1)
+      mu: scalar, total of the linear constraint
+      direct: boolean, if True, we solve for lambda and compute mu;
+          if False, we solve directly for lambda and mu
+    Output:
+      mu_i: 1D Numpy array, raked values
+    """
+    assert isinstance(x_i, np.ndarray), \
+        'Observations should be a Numpy array.'
+    assert isinstance(q_i, np.ndarray), \
+        'Weights should be a Numpy array.'
+    assert isinstance(v_i, np.ndarray), \
+        'Linear constraints should be a Numpy array.'
+    assert len(x_i) == len(q_i), \
+        'Observations and weights arrays should have the same size.'
+    assert len(x_i) == len(v_i), \
+        'The number of coefficients for the linear constraints should be equal to the number of observations.'
+
+    if direct:
+        lambda_k = (np.sum(v_i * x_i) - mu) / np.sum(q_i * np.square(v_i))
+        mu_i = x_i - q_i * v_i * lambda_k
+    else:
+        Phi = np.concatenate((np.concatenate((np.diag(1.0), \
+            (q_i * v_i).reshape((-1, 1))), axis=1), \
+            np.array(v_i.tolist() + [0.0]).reshape((-1.0, len(v_i) + 1))), axis=0)
+        y = np.array(x_i.tolist() + [mu])
+        result = np.linalg.solve(Phi, y)
+        mu_i = result[0:-1]
+    return mu_i
+
+def raking_entropic_distance(x_i, q_i, v_i, mu, max_iter=500, return_num_iter=False, direct=True):
     """
     Raking using the entropic distance mu log(mu/x) + x - mu.
     Input:
@@ -39,6 +85,9 @@ def raking_entropic_distance(x_i, q_i, v_i, mu, max_iter=500):
       v_i: 1D Numpy array, weights for the linear constraint (usually 1)
       mu: scalar, total of the linear constraint
       max_iter: integer, maximum number of iterations for Newton's method
+      return_num_iter: boolean, whether we return the number of iterations
+      direct: boolean, if True, we solve for lambda and compute mu;
+          if False, we solve directly for lambda and mu
     Output:
       mu_i: 1D Numpy array, raked values
     """
@@ -53,17 +102,383 @@ def raking_entropic_distance(x_i, q_i, v_i, mu, max_iter=500):
     assert len(x_i) == len(v_i), \
         'The number of coefficients for the linear constraints should be equal to the number of observations.'
 
-    epsilon = 1
-    lambda_k = 0.0
-    iter_eps = 0
-    while (epsilon > 1.0e-5) & (iter_eps < max_iter):
-        f1 = mu - np.sum(v_i * x_i * np.exp(- q_i * v_i * lambda_k))
-        f2 = np.sum(q_i * np.square(v_i) * x_i * np.exp(- q_i * v_i * lambda_k))
-        lambda_k = lambda_k - f1 / f2
-        epsilon = abs(f1 / f2)
-        iter_eps = iter_eps + 1
-    mu_i = x_i * np.exp(- q_i * v_i * lambda_k)
-    return mu_i
+    epsilon = 1.0
+    if direct:
+        lambda_k = 0.0
+        iter_eps = 0
+        while (epsilon > 1.0e-8) & (iter_eps < max_iter):
+            f1 = mu - np.sum(v_i * x_i * np.exp(- q_i * v_i * lambda_k))
+            f2 = np.sum(q_i * np.square(v_i) * x_i * np.exp(- q_i * v_i * lambda_k))
+            lambda_k = lambda_k - f1 / f2
+            epsilon = abs(f1 / f2)
+            iter_eps = iter_eps + 1
+        mu_i = x_i * np.exp(- q_i * v_i * lambda_k)
+    else:
+        mu_k = np.zeros(len(x_i))
+        lambda_k = 0.0
+        result = np.array(mu_k.tolist() + [lambda_k])
+        iter_eps = 0
+        while (epsilon > 1.0e-8) & (iter_eps < max_iter):
+            Phi = np.concatenate((np.concatenate((np.diag(1.0 / mu_k), \
+                (q_i * v_i).reshape((-1, 1))), axis=1), \
+                np.array(v_i.tolist() + [0.0]).reshape((-1.0, len(v_i) + 1))), axis=0)
+            y = np.array((np.log(mu_k / x_i) + q_i * v_i * lambda_k).tolist() + [np.sum(v_i * mu_k) - mu])
+            gamma = 1.0
+            iter_gam = 0
+            result_tmp = result - gamma * np.linalg.solve(Phi, y)
+            mu_k_tmp = result_tmp[0:-1]
+            lambda_k_tmp = result_tmp[-1]
+            while (np.any(mu_k_tmp < 0.0)) & (iter_gam < max_iter):
+                gamma = gamma / 2.0
+                iter_gam = iter_gam + 1
+                result_tmp = result - gamma * np.linalg.solve(Phi, y)
+                mu_k_tmp = result_tmp[0:-1]
+                lambda_k_tmp = result_tmp[-1]
+            result = result - gamma * np.linalg.solve(Phi, y)
+            mu_k = result[0:-1]
+            lambda_k = result[-1]
+            epsilon = np.sum(np.abs(gamma * np.linalg.solve(Phi, y)))
+            iter_eps = iter_eps + 1           
+        mu_i = mu_k
+    if return_num_iter:
+        return [mu_i, iter_eps]
+    else:
+        return mu_i
+
+def raking_inverse_entropic_distance(x_i, q_i, v_i, mu, max_iter=500, return_num_iter=False, direct=True):
+    """
+    Raking using the inverse entropic distance x log(x/mu) + mu - x.
+    Input:
+      x_i: 1D Numpy array, observed values
+      q_i: 1D Numpy array, weights for the observations
+      v_i: 1D Numpy array, weights for the linear constraint (usually 1)
+      mu: scalar, total of the linear constraint
+      max_iter: integer, maximum number of iterations for Newton's method
+      return_num_iter: boolean, whether we return the number of iterations
+      direct: boolean, if True, we solve for lambda and compute mu;
+          if False, we solve directly for lambda and mu
+    Output:
+      mu_i: 1D Numpy array, raked values
+    """
+    assert isinstance(x_i, np.ndarray), \
+        'Observations should be a Numpy array.'
+    assert isinstance(q_i, np.ndarray), \
+        'Weights should be a Numpy array.'
+    assert isinstance(v_i, np.ndarray), \
+        'Linear constraints should be a Numpy array.'
+    assert len(x_i) == len(q_i), \
+        'Observations and weights arrays should have the same size.'
+    assert len(x_i) == len(v_i), \
+        'The number of coefficients for the linear constraints should be equal to the number of observations.'
+
+    epsilon = 1.0
+    if direct:
+        lambda_k = 0.0
+        iter_eps = 0
+        while (epsilon > 1.0e-8) & (iter_eps < max_iter):
+            f1 = mu - np.sum(v_i * x_i /(1.0 + q_i * v_i * lambda_k))
+            f2 = np.sum(q_i * np.square(v_i) * x_i / np.square(1 + q_i * v_i * lambda_k))
+            lambda_k = lambda_k - f1 / f2
+            epsilon = abs(f1 / f2)
+            iter_eps = iter_eps + 1
+        mu_i = x_i / (1.0 + q_i * v_i * lambda_k)
+    else:
+        mu_k = np.zeros(len(x_i))
+        lambda_k = 0.0
+        result = np.array(mu_k.tolist() + [lambda_k])
+        iter_eps = 0
+        while (epsilon > 1.0e-8) & (iter_eps < max_iter):
+            Phi = np.concatenate((np.concatenate((np.diag(np.power(x_i, 2.0) / np.power(mu_k, 3.0)), \
+                (q_i * v_i).reshape((-1, 1))), axis=1), \
+                np.array(v_i.tolist() + [0.0]).reshape((-1.0, len(v_i) + 1))), axis=0)
+            y = np.array((1.0 - (x_i / mu_k) + q_i * v_i * lambda_k).tolist() + [np.sum(v_i * mu_k) - mu])
+            gamma = 1.0
+            iter_gam = 0
+            result_tmp = result - gamma * np.linalg.solve(Phi, y)
+            mu_k_tmp = result_tmp[0:-1]
+            lambda_k_tmp = result_tmp[-1]
+            while (np.any(mu_k_tmp < 0.0)) & (iter_gam < max_iter):
+                gamma = gamma / 2.0
+                iter_gam = iter_gam + 1
+                result_tmp = result - gamma * np.linalg.solve(Phi, y)
+                mu_k_tmp = result_tmp[0:-1]
+                lambda_k_tmp = result_tmp[-1]
+            result = result - gamma * np.linalg.solve(Phi, y)
+            mu_k = result[0:-1]
+            lambda_k = result[-1]
+            epsilon = np.sum(np.abs(gamma * np.linalg.solve(Phi, y)))
+            iter_eps = iter_eps + 1           
+        mu_i = mu_k
+    if return_num_iter:
+        return [mu_i, iter_eps]
+    else:
+        return mu_i
+
+def raking_inverse_chi2_distance(x_i, q_i, v_i, mu, max_iter=500, return_num_iter=False, direct=True):
+    """
+    Raking using the inverse chi2 distance (x - mu)^2 / 2mu.
+    Input:
+      x_i: 1D Numpy array, observed values
+      q_i: 1D Numpy array, weights for the observations
+      v_i: 1D Numpy array, weights for the linear constraint (usually 1)
+      mu: scalar, total of the linear constraint
+      max_iter: integer, maximum number of iterations for Newton's method
+      return_num_iter: boolean, whether we return the number of iterations
+      direct: boolean, if True, we solve for lambda and compute mu;
+          if False, we solve directly for lambda and mu
+     Output:
+      mu_i: 1D Numpy array, raked values
+    """
+    assert isinstance(x_i, np.ndarray), \
+        'Observations should be a Numpy array.'
+    assert isinstance(q_i, np.ndarray), \
+        'Weights should be a Numpy array.'
+    assert isinstance(v_i, np.ndarray), \
+        'Linear constraints should be a Numpy array.'
+    assert len(x_i) == len(q_i), \
+        'Observations and weights arrays should have the same size.'
+    assert len(x_i) == len(v_i), \
+        'The number of coefficients for the linear constraints should be equal to the number of observations.'
+
+    epsilon = 1.0
+    if direct:
+        lambda_k = 0.0
+        iter_eps = 0
+        while (epsilon > 1.0e-8) & (iter_eps < max_iter):
+            f1 = mu - np.sum(v_i * x_i * np.power(1.0 + 2.0 * q_i * v_i * lambda_k, 1.0 / alpha))
+            f2 = np.sum(q_i * np.square(v_i) * x_i / np.power(1 + 2.0 * q_i * v_i * lambda_k, 3.0 / 2.0))
+            gamma = 1.0
+            iter_gam = 0
+            while (np.any(1 + 2.0 * q_i * v_i * (lambda_k - gamma * f1 / f2) <= 0.0)) & \
+                  (iter_gam < max_iter):
+                gamma = gamma / 2.0
+                iter_gam = iter_gam + 1
+            lambda_k = lambda_k - gamma * f1 / f2
+            epsilon = gamma * abs(f1 / f2)
+            iter_eps = iter_eps + 1
+        mu_i = x_i / np.sqrt(1.0 + 2.0 * q_i * v_i * lambda_k)
+    else:
+        mu_k = np.zeros(len(x_i))
+        lambda_k = 0.0
+        result = np.array(mu_k.tolist() + [lambda_k])
+        iter_eps = 0
+        while (epsilon > 1.0e-8) & (iter_eps < max_iter):
+            Phi = np.concatenate((np.concatenate((np.diag(np.power(x_i, 3.0) / np.power(mu_k, 4.0)), \
+                (q_i * v_i).reshape((-1, 1))), axis=1), \
+                np.array(v_i.tolist() + [0.0]).reshape((-1.0, len(v_i) + 1))), axis=0)
+            y = np.array(((1.0 - np.power(x_i, 2.0) / np.power(mu_k, 2.0)) / 2.0 + q_i * v_i * lambda_k).tolist() + \
+                [np.sum(v_i * mu_k) - mu])
+            gamma = 1.0
+            iter_gam = 0
+            result_tmp = result - gamma * np.linalg.solve(Phi, y)
+            mu_k_tmp = result_tmp[0:-1]
+            lambda_k_tmp = result_tmp[-1]
+            while ((np.any(mu_k_tmp < 0.0)) |
+                   (np.any(1.0 + 2.0 * q_i * v_i * lambda_k_tmp <= 0.0))) & \
+                  (iter_gam < max_iter):
+                gamma = gamma / 2.0
+                iter_gam = iter_gam + 1
+                result_tmp = result - gamma * np.linalg.solve(Phi, y)
+                mu_k_tmp = result_tmp[0:-1]
+                lambda_k_tmp = result_tmp[-1]
+        mu_i = mu_k
+    if return_num_iter:
+        return [mu_i, iter_eps]
+    else:
+        return mu_i
+
+def raking_general_distance(x_i, q_i, v_i, alpha, mu, max_iter=500, return_num_iter=False, direct=True):
+    """
+    Raking using general distance.
+    Input:
+      x_i: 1D Numpy array, observed values
+      q_i: 1D Numpy array, weights for the observations
+      v_i: 1D Numpy array, weights for the linear constraint (usually 1)
+      alpha: scalar, paremeter of the general distance function
+      mu: scalar, total of the linear constraint
+      max_iter: integer, maximum number of iterations for Newton's method
+      return_num_iter: boolean, whether we return the number of iterations
+      direct: boolean, if True, we solve for lambda and compute mu;
+          if False, we solve directly for lambda and mu
+     Output:
+      mu_i: 1D Numpy array, raked values
+    """
+    assert isinstance(x_i, np.ndarray), \
+        'Observations should be a Numpy array.'
+    assert isinstance(q_i, np.ndarray), \
+        'Weights should be a Numpy array.'
+    assert isinstance(v_i, np.ndarray), \
+        'Linear constraints should be a Numpy array.'
+    assert len(x_i) == len(q_i), \
+        'Observations and weights arrays should have the same size.'
+    assert len(x_i) == len(v_i), \
+        'The number of coefficients for the linear constraints should be equal to the number of observations.'
+
+    if alpha == 1:
+        iter_eps = 1
+        mu_i = raking_chi2_distance(x_i, q_i, v_i, mu, direct)
+    else:
+        epsilon = 1.0
+        if direct:
+            lambda_k = 0.0
+            iter_eps = 0
+            while (epsilon > 1.0e-8) & (iter_eps < max_iter):
+                if alpha == 0:
+                    f1 = mu - np.sum(v_i * x_i * np.exp(- q_i * v_i * lambda_k))
+                    f2 = np.sum(q_i * np.square(v_i) * x_i * np.exp(- q_i * v_i * lambda_k))
+                else:
+                    f1 = mu - np.sum(v_i * x_i * np.power(1.0 - alpha * q_i * v_i * lambda_k, 1.0 / alpha))
+                    f2 = np.sum(q_i * np.square(v_i) * x_i * np.power(1.0 - alpha * q_i * v_i * lambda_k, 1.0 / alpha - 1.0))
+                if (alpha > 0.5) or (alpha < -1.0):
+                    gamma = 1.0
+                    iter_gam = 0
+                    while (np.any(1 - alpha * q_i * v_i * (lambda_k - gamma * f1 / f2) <= 0.0)) & \
+                          (iter_gam < max_iter):
+                        gamma = gamma / 2.0
+                        iter_gam = iter_gam + 1
+                else:
+                    gamma = 1.0
+                lambda_k = lambda_k - gamma * f1 / f2
+                epsilon = gamma * abs(f1 / f2)
+                iter_eps = iter_eps + 1
+            if alpha == 0:
+                mu_i = x_i * np.exp(- q_i * v_i * lambda_k)
+            else:
+                mu_i = x_i * np.power(1.0 - alpha * q_i * v_i * lambda_k, 1.0 / alpha)
+        else:
+            mu_k = np.zeros(len(x_i))
+            lambda_k = 0.0
+            result = np.array(mu_k.tolist() + [lambda_k])
+            iter_eps = 0
+            while (epsilon > 1.0e-8) & (iter_eps < max_iter):
+                if alpha == 0:
+                    Phi = np.concatenate((np.concatenate((np.diag(1.0 / mu_k), \
+                       (q_i * v_i).reshape((-1, 1))), axis=1), \
+                       np.array(v_i.tolist() + [0.0]).reshape((-1.0, len(v_i) + 1))), axis=0)
+                    y = np.array((np.log(mu_k / x_i) + q_i * v_i * lambda_k).tolist() + [np.sum(v_i * mu_k) - mu])
+                else:
+                    Phi = np.concatenate((np.concatenate((np.diag((1.0 / mu_k) * np.power(mu_k / x_i, alpha - 1.0)), \
+                        (q_i * v_i).reshape((-1, 1))), axis=1), \
+                        np.array(v_i.tolist() + [0.0]).reshape((-1.0, len(v_i) + 1))), axis=0)
+                    y = np.array(((1.0 / alpha) * (np.power(mu_k / x_i, alpha)  - 1.0) + q_i * v_i * lambda_k).tolist() + \
+                        [np.sum(v_i * mu_k) - mu])
+                gamma = 1.0
+                iter_gam = 0
+                result_tmp = result - gamma * np.linalg.solve(Phi, y)
+                mu_k_tmp = result_tmp[0:-1]
+                lambda_k_tmp = result_tmp[-1]
+                if (alpha > 0.5) or (alpha < -1.0):
+                    while ((np.any(mu_k_tmp < 0.0)) |
+                           (np.any(1 - alpha * q_i * v_i * lambda_k_tmp <= 0.0))) & \
+                          (iter_gam < max_iter):
+                        gamma = gamma / 2.0
+                        iter_gam = iter_gam + 1
+                        result_tmp = result - gamma * np.linalg.solve(Phi, y)
+                        mu_k_tmp = result_tmp[0:-1]
+                        lambda_k_tmp = result_tmp[-1]
+                else:
+                    while (np.any(mu_k_tmp < 0.0)) & (iter_gam < max_iter):
+                        gamma = gamma / 2.0
+                        iter_gam = iter_gam + 1
+                        result_tmp = result - gamma * np.linalg.solve(Phi, y)
+                        mu_k_tmp = result_tmp[0:-1]
+                        lambda_k_tmp = result_tmp[-1]
+                result = result - gamma * np.linalg.solve(Phi, y)
+                mu_k = result[0:-1]
+                lambda_k = result[-1]
+                epsilon = np.sum(np.abs(gamma * np.linalg.solve(Phi, y)))
+                iter_eps = iter_eps + 1           
+            mu_i = mu_k
+    if return_num_iter:
+        return [mu_i, iter_eps]
+    else:
+        return mu_i
+
+def raking_logit(x_i, l_i, h_i, q_i, v_i, mu, max_iter=500, return_num_iter=False, direct=True):
+    """
+    Logit raking ensuring that l_i < mu_i < h_i.
+    Input:
+      x_i: 1D Numpy array, observed values
+      l_i: 1D Numpy array, lower bound for the observations
+      h_i: 1D Numpy array, upper bound for the observations
+      q_i: 1D Numpy array, weights for the observations
+      v_i: 1D Numpy array, weights for the linear constraint (usually 1)
+      mu: scalar, total of the linear constraint
+      max_iter: integer, maximum number of iterations for Newton's method
+    return_num_iter: boolean, whether we return the number of iterations
+      direct: boolean, if True, we solve for lambda and compute mu;
+          if False, we solve directly for lambda and mu
+    Output:
+      mu_i: 1D Numpy array, raked values
+    """
+    assert isinstance(x_i, np.ndarray), \
+        'Observations should be a Numpy array.'
+    assert isinstance(l_i, np.ndarray), \
+        'Lower bounds should be a Numpy array.'
+    assert isinstance(h_i, np.ndarray), \
+        'Upper bounds should be a Numpy array.'
+    assert isinstance(q_i, np.ndarray), \
+        'Weights should be a Numpy array.'
+    assert isinstance(v_i, np.ndarray), \
+        'Linear constraints should be a Numpy array.'
+    assert len(x_i) == len(l_i), \
+        'Observations and lower bounds arrays should have the same size.'
+    assert len(x_i) == len(h_i), \
+        'Observations and upper bounds arrays should have the same size.'
+    assert len(x_i) == len(q_i), \
+        'Observations and weights arrays should have the same size.'
+    assert len(x_i) == len(v_i), \
+        'The number of coefficients for the linear constraints should be equal to the number of observations.'
+
+    epsilon = 1.0
+    if direct:
+        lambda_k = 0.0
+        iter_eps = 0
+        while (epsilon > 1.0e-8) & (iter_eps < max_iter):
+            f1 = mu - np.sum(v_i * (l_i * (h_i - x_i) + \
+                h_i * (x_i - l_i) * np.exp(- q_i * v_i * lambda_k)) / \
+                ((h_i - x_i) + (x_i - l_i) * np.exp(- q_i * v_i * lambda_k)))
+            f2 = np.sum(q_i * np.square(v_i) * ((x_i - l_i) * (h_i - x_i) * (h_i - l_i) * \
+                np.exp(- q_i * v_i * lambda_k)) / \
+                np.square((h_i - x_i) + (x_i - l_i) * np.exp(- q_i * v_i * lambda_k)))  
+            lambda_k = lambda_k - f1 / f2
+            epsilon = abs(f1 / f2)
+            iter_eps = iter_eps + 1
+        mu_i = v_i * (l_i * (h_i - x_i) + \
+            h_i * (x_i - l_i) * np.exp(- q_i * v_i * lambda_k)) / \
+            ((h_i - x_i) + (x_i - l_i) * np.exp(- q_i * v_i * lambda_k))
+    else:
+        mu_k = np.zeros(len(x_i))
+        lambda_k = 0.0
+        result = np.array(mu_k.tolist() + [lambda_k])
+        iter_eps = 0
+        while (epsilon > 1.0e-8) & (iter_eps < max_iter):
+            Phi = np.concatenate((np.concatenate((np.diag(1.0 / (mu_k - l_i) + 1.0 / (h_i - mu_k)), \
+                (q_i * v_i).reshape((-1, 1))), axis=1), \
+                np.array(v_i.tolist() + [0.0]).reshape((-1.0, len(v_i) + 1))), axis=0)
+            y = np.array((np.log((mu_k - l_i) / (x_i - l_i)) - np.log((h_i - mu_k) / (h_i - x_i)) + q_i * v_i * lambda_k).tolist() + \
+                [np.sum(v_i * mu_k) - mu])
+            gamma = 1.0
+            iter_gam = 0
+            result_tmp = result - gamma * np.linalg.solve(Phi, y)
+            mu_k_tmp = result_tmp[0:-1]
+            lambda_k_tmp = result_tmp[-1]
+            while (np.any(mu_k_tmp < 0.0)) & (iter_gam < max_iter):
+                gamma = gamma / 2.0
+                iter_gam = iter_gam + 1
+                result_tmp = result - gamma * np.linalg.solve(Phi, y)
+                mu_k_tmp = result_tmp[0:-1]
+                lambda_k_tmp = result_tmp[-1]
+            result = result - gamma * np.linalg.solve(Phi, y)
+            mu_k = result[0:-1]
+            lambda_k = result[-1]
+            epsilon = np.sum(np.abs(gamma * np.linalg.solve(Phi, y)))
+            iter_eps = iter_eps + 1           
+        mu_i = mu_k        
+    if return_num_iter:
+        return [mu_i, iter_eps]
+    else:
+        return mu_i
 
 def raking_vectorized_entropic_distance(df, agg_var, constant_vars=[]):
     """
@@ -93,163 +508,9 @@ def raking_vectorized_entropic_distance(df, agg_var, constant_vars=[]):
     name1 = agg_var + '_total'
     name2 = 'all_' + agg_var + '_value'
     df[name1] = df.groupby(constant_vars).value.transform('sum')
-    df['value_raked'] = df['value'] * df[name2] / df[name1]
+    df['entropic_distance'] = df['value'] * df[name2] / df[name1]
+    df.drop(columns=[name1], inplace=True)
     return df
-
-def raking_inverse_entropic_distance(x_i, q_i, v_i, mu, max_iter=500):
-    """
-    Raking using the inverse entropic distance x log(x/mu) + mu - x.
-    Input:
-      x_i: 1D Numpy array, observed values
-      q_i: 1D Numpy array, weights for the observations
-      v_i: 1D Numpy array, weights for the linear constraint (usually 1)
-      mu: scalar, total of the linear constraint
-      max_iter: integer, maximum number of iterations for Newton's method
-    Output:
-      mu_i: 1D Numpy array, raked values
-    """
-    assert isinstance(x_i, np.ndarray), \
-        'Observations should be a Numpy array.'
-    assert isinstance(q_i, np.ndarray), \
-        'Weights should be a Numpy array.'
-    assert isinstance(v_i, np.ndarray), \
-        'Linear constraints should be a Numpy array.'
-    assert len(x_i) == len(q_i), \
-        'Observations and weights arrays should have the same size.'
-    assert len(x_i) == len(v_i), \
-        'The number of coefficients for the linear constraints should be equal to the number of observations.'
-
-    epsilon = 1
-    lambda_k = 0.0
-    iter_eps = 0
-    while (epsilon > 1.0e-10) & (iter_eps < max_iter):
-        f1 = mu - np.sum(v_i * x_i /(1 + q_i * v_i * lambda_k))
-        f2 = np.sum(q_i * np.square(v_i) * x_i / np.square(1 + q_i * v_i * lambda_k))
-        lambda_k = lambda_k - f1 / f2
-        epsilon = abs(f1 / f2)
-        iter_eps = iter_eps + 1
-    mu_i = x_i / (1 + q_i * v_i * lambda_k)
-    return mu_i
-
-def raking_inverse_chi2_distance(x_i, q_i, v_i, mu, max_iter=500):
-    """
-    Raking using the inverse chi2 distance (x - mu)^2 / 2mu.
-    Input:
-      x_i: 1D Numpy array, observed values
-      q_i: 1D Numpy array, weights for the observations
-      v_i: 1D Numpy array, weights for the linear constraint (usually 1)
-      mu: scalar, total of the linear constraint
-      max_iter: integer, maximum number of iterations for Newton's method
-    Output:
-      mu_i: 1D Numpy array, raked values
-    """
-    assert isinstance(x_i, np.ndarray), \
-        'Observations should be a Numpy array.'
-    assert isinstance(q_i, np.ndarray), \
-        'Weights should be a Numpy array.'
-    assert isinstance(v_i, np.ndarray), \
-        'Linear constraints should be a Numpy array.'
-    assert len(x_i) == len(q_i), \
-        'Observations and weights arrays should have the same size.'
-    assert len(x_i) == len(v_i), \
-        'The number of coefficients for the linear constraints should be equal to the number of observations.'
-
-    epsilon = 1
-    lambda_k = 0.0
-    iter_eps = 0
-    while (epsilon > 1.0e-10) & (iter_eps < max_iter):
-        f1 = mu - np.sum(v_i * x_i /np.sqrt(1 + 2 *q_i * v_i * lambda_k))
-        f2 = np.sum(q_i * np.square(v_i) * x_i / np.power(1 + 2 * q_i * v_i * lambda_k, 1.5))
-        gamma = 1.0
-        iter_gam = 0
-        while (np.any(1 + 2 * q_i * v_i * (lambda_k - gamma * f1 / f2) <= 0.0)) & \
-            (iter_gam < max_iter):
-                gamma = gamma / 2.0
-                iter_gam = iter_gam + 1
-        lambda_k = lambda_k - gamma * f1 / f2
-        epsilon = gamma * abs(f1 / f2)
-        iter_eps = iter_eps + 1
-    mu_i = x_i / np.sqrt(1 + 2 * q_i * v_i * lambda_k)
-    return mu_i
-
-def raking_general_distance(x_i, q_i, v_i, alpha, mu, max_iter=500):
-    """
-    Input:
-      x_i: 1D Numpy array, observed values
-      q_i: 1D Numpy array, weights for the observations
-      v_i: 1D Numpy array, weights for the linear constraint (usually 1)
-      mu: scalar, total of the linear constraint
-      max_iter: integer, maximum number of iterations for Newton's method
-    Output:
-      mu_i: 1D Numpy array, raked values
-    """
-    assert isinstance(x_i, np.ndarray), \
-        'Observations should be a Numpy array.'
-    assert isinstance(q_i, np.ndarray), \
-        'Weights should be a Numpy array.'
-    assert isinstance(v_i, np.ndarray), \
-        'Linear constraints should be a Numpy array.'
-    assert len(x_i) == len(q_i), \
-        'Observations and weights arrays should have the same size.'
-    assert len(x_i) == len(v_i), \
-        'The number of coefficients for the linear constraints should be equal to the number of observations.'
-
-    if alpha == 1:
-        mu_i = raking_chi2_distance(x_i, q_i, v_i, mu)
-    else:
-        epsilon = 1
-        lambda_k = 0.0
-        iter_eps = 0
-        while (epsilon > 1.0e-10) & (iter_eps < max_iter):
-            if alpha == 0:
-                f1 = mu - np.sum(v_i * x_i * np.exp(- q_i * v_i * lambda_k))
-                f2 = np.sum(q_i * np.square(v_i) * x_i * np.exp(- q_i * v_i * lambda_k))
-            else:
-                f1 = mu - np.sum(v_i * x_i * np.power(1 - alpha * q_i * v_i * lambda_k, 1.0 / alpha))
-                f2 = np.sum(q_i * np.square(v_i) * x_i * np.power(1 - alpha * q_i * v_i * lambda_k, 1.0 / alpha - 1.0))
-            if (alpha > 0.5) or (alpha < -1.0):
-                gamma = 1.0
-                iter_gam = 0
-                while (np.any(1 - alpha * q_i * v_i * (lambda_k - gamma * f1 / f2) <= 0.0)) & \
-                      (iter_gam < max_iter):
-                    gamma = gamma / 2.0
-                    iter_gam = iter_gam + 1
-            else:
-                gamma = 1.0
-            lambda_k = lambda_k - gamma * f1 / f2
-            epsilon = gamma * abs(f1 / f2)
-            iter_eps = iter_eps + 1
-        if alpha == 0:
-            mu_i = x_i * np.exp(- q_i * v_i * lambda_k)
-        else:
-            mu_i = x_i * np.power(1 - alpha * q_i * v_i * lambda_k, 1.0 / alpha)
-    return mu_i
-
-def raking_l2_distance(x_i, q_i, v_i, mu):
-    """
-    Raking using the l2 distance (mu - x)^2 / 2.
-    Input:
-      x_i: 1D Numpy array, observed values
-      q_i: 1D Numpy array, weights for the observations
-      v_i: 1D Numpy array, weights for the linear constraint (usually 1)
-      mu: scalar, total of the linear constraint
-    Output:
-      mu_i: 1D Numpy array, raked values
-    """
-    assert isinstance(x_i, np.ndarray), \
-        'Observations should be a Numpy array.'
-    assert isinstance(q_i, np.ndarray), \
-        'Weights should be a Numpy array.'
-    assert isinstance(v_i, np.ndarray), \
-        'Linear constraints should be a Numpy array.'
-    assert len(x_i) == len(q_i), \
-        'Observations and weights arrays should have the same size.'
-    assert len(x_i) == len(v_i), \
-        'The number of coefficients for the linear constraints should be equal to the number of observations.'
-
-    lambda_k = (np.sum(v_i * x_i) - mu) / np.sum(q_i * np.square(v_i))
-    mu_i = x_i - q_i * v_i * lambda_k
-    return mu_i
 
 def raking_vectorized_l2_distance(df, agg_var, constant_vars=[]):
     """
@@ -280,57 +541,7 @@ def raking_vectorized_l2_distance(df, agg_var, constant_vars=[]):
     name2 = 'all_' + agg_var + '_value'
     I = len(df[agg_var].unique().tolist())
     df[name1] = df.groupby(constant_vars).value.transform('sum')
-    df['value_raked'] = df['value'] - (df[name1] - df[name2]) / I
+    df['l2_distance'] = df['value'] - (df[name1] - df[name2]) / I
+    df.drop(columns=[name1], inplace=True)
     return df
-
-def raking_logit(x_i, l_i, h_i, q_i, v_i, mu, max_iter=500):
-    """
-    Logit raking ensuring that l_i < mu_i < h_i.
-    Input:
-      x_i: 1D Numpy array, observed values
-      l_i: 1D Numpy array, lower bound for the observations
-      h_i: 1D Numpy array, upper bound for the observations
-      q_i: 1D Numpy array, weights for the observations
-      v_i: 1D Numpy array, weights for the linear constraint (usually 1)
-      mu: scalar, total of the linear constraint
-      max_iter: integer, maximum number of iterations for Newton's method
-    Output:
-      mu_i: 1D Numpy array, raked values
-    """
-    assert isinstance(x_i, np.ndarray), \
-        'Observations should be a Numpy array.'
-    assert isinstance(l_i, np.ndarray), \
-        'Lower bounds should be a Numpy array.'
-    assert isinstance(h_i, np.ndarray), \
-        'Upper bounds should be a Numpy array.'
-    assert isinstance(q_i, np.ndarray), \
-        'Weights should be a Numpy array.'
-    assert isinstance(v_i, np.ndarray), \
-        'Linear constraints should be a Numpy array.'
-    assert len(x_i) == len(l_i), \
-        'Observations and lower bounds arrays should have the same size.'
-    assert len(x_i) == len(h_i), \
-        'Observations and upper bounds arrays should have the same size.'
-    assert len(x_i) == len(q_i), \
-        'Observations and weights arrays should have the same size.'
-    assert len(x_i) == len(v_i), \
-        'The number of coefficients for the linear constraints should be equal to the number of observations.'
-
-    epsilon = 1
-    lambda_k = 0.0
-    iter_eps = 0
-    while (epsilon > 1.0e-5) & (iter_eps < max_iter):
-        f1 = mu - np.sum(v_i * (l_i * (h_i - x_i) + \
-            h_i * (x_i - l_i) * np.exp(- q_i * v_i * lambda_k)) / \
-            ((h_i - x_i) + (x_i - l_i) * np.exp(- q_i * v_i * lambda_k)))
-        f2 = np.sum(q_i * np.square(v_i) * ((x_i - l_i) * (h_i - x_i) * (h_i - l_i) * \
-            np.exp(- q_i * v_i * lambda_k)) / \
-            np.square((h_i - x_i) + (x_i - l_i) * np.exp(- q_i * v_i * lambda_k)))  
-        lambda_k = lambda_k - f1 / f2
-        epsilon = abs(f1 / f2)
-        iter_eps = iter_eps + 1
-    mu_i = v_i * (l_i * (h_i - x_i) + \
-        h_i * (x_i - l_i) * np.exp(- q_i * v_i * lambda_k)) / \
-        ((h_i - x_i) + (x_i - l_i) * np.exp(- q_i * v_i * lambda_k))
-    return mu_i
 
