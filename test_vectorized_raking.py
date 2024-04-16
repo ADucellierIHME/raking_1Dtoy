@@ -1,5 +1,5 @@
 """
-This Python script is to test the 
+This Python script is to test the vectorized version of the raking methods
 """
 
 import numpy as np
