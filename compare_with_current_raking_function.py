@@ -6,7 +6,7 @@ the LSAE Engineering team with our own raking code
 import numpy as np
 import pandas as pd
 
-from create_experiment import raking_without_sigma
+from raking_uncertainty import raking_without_sigma
 
 # Read dataset
 df = pd.read_excel('../data/2D_raking_example.xlsx', nrows=16)

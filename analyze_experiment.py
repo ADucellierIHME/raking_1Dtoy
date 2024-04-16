@@ -87,12 +87,35 @@ def gather_MAPE(mu_i, sigma_i, error, names):
     df = pd.concat(dfs)
     return df
 
+def gather_iters(num_iters, names):
+    """
+    Function to gather the number of iterations into a pandas dataframe.
+    Input:
+      - num_iters: 2D Numpy array, number of iterations
+      - names: list, names of the methods
+    Output:
+      - df: pandas DataFrame with columns iterations and method
+    """
+    assert isinstance(num_iters, np.ndarray), \
+        'Means should be a Numpy array.'
+    assert np.shape(num_iters)[0] == len(names), \
+        'The number of names must be the same as the number of columns in the iterations matrix.'
+
+    dfs = []
+    for index, name in enumerate(names):
+        df = pd.DataFrame({'iterations': num_iters[index, :],
+                           'method': name})
+        dfs.append(df)
+    df = pd.concat(dfs)
+    return df
+
 def plot_MAPE(df_MAPE, filename):
     """
     Function to plot the MAPE results.
     Input:
       df_MAPE: pandas DataFrame with columns
                [variable, true_mean, standard_deviation, method, MAPE]
+      filename: string, name of the output file to save the plots
     Output: None
     """
     chart1 = alt.Chart(df_MAPE).mark_bar().encode(
@@ -124,4 +147,29 @@ def plot_MAPE(df_MAPE, filename):
         titleFontSize=16,
     )
     chart2.save('MAPE_standard_deviation_' + filename + '.html')
+
+def plot_iters(df_iters, filename):
+    """
+    Function to plot the number of iterations.
+    Input:
+      df_MAPE: pandas DataFrame with columns
+               [variable, true_mean, standard_deviation, method, MAPE]
+      filename: string, name of the output file to save the plots
+    Output: None
+    """
+    chart1 = alt.Chart(df_iters).mark_bar().encode(
+        x=alt.X('iterations:Q', bin=True, axis=alt.Axis(title='Number of iterations')),
+        y='count()',
+        column=alt.Column('method:N', header=alt.Header(title='Raking method', titleFontSize=16))
+    ).configure_axis(
+        labelFontSize=16,
+        titleFontSize=16
+    ).configure_legend(
+        labelFontSize=16,
+        titleFontSize=16,
+    ).configure_header(
+        labelFontSize=16,
+        titleFontSize=16
+    )
+    chart1.save('iterations_' + filename + '.html')
 

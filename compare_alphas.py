@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from analyze_experiment import compute_MAPEs, gather_MAPE, plot_MAPE
+from analyze_experiment import compute_MAPEs, gather_MAPE, gather_iters, plot_MAPE, plot_iters
 from generate_data import generate_data
 from raking_methods_1D import raking_general_distance
 
@@ -30,6 +30,7 @@ def single_simulation(mu_i, sigma_i, v_i, q_i, mu, L, alphas):
     Output:
       - mu_tilde_i: 2D Numpy array, estimated means
                     (one column per value of alpha)
+      - num_iters: 1D Numpy array, number of iterations
     """
     assert isinstance(mu_i, np.ndarray), \
         'Means should be a Numpy array.'
@@ -50,9 +51,10 @@ def single_simulation(mu_i, sigma_i, v_i, q_i, mu, L, alphas):
 
     x_i = generate_data(mu_i, sigma_i, L)
     mu_tilde_i = np.zeros((len(x_i), len(alphas)))
+    num_iters = np.zeros(len(alphas))
     for index, alpha in enumerate(alphas):
-        mu_tilde_i[:, index] = raking_general_distance(x_i, v_i, q_i, alpha, mu)
-    return mu_tilde_i
+        (mu_tilde_i[:, index], num_iters[index]) = raking_general_distance(x_i, v_i, q_i, alpha, mu, 500, True, True)
+    return (mu_tilde_i, num_iters)
 
 def run_simulations(mu_i, sigma_i, v_i, q_i, mu, L, N, alphas):
     """
@@ -72,6 +74,9 @@ def run_simulations(mu_i, sigma_i, v_i, q_i, mu, L, N, alphas):
                     (dim1: number of random variables
                      dim2: number of values for alpha
                      dim3: number of simulations)
+      - num_iters: 2D Numpy array, number of iterations
+                   (dim1: number of values for alpha
+                    dim2: number of simulations)
     """
     assert isinstance(mu_i, np.ndarray), \
         'Means should be a Numpy array'
@@ -91,9 +96,10 @@ def run_simulations(mu_i, sigma_i, v_i, q_i, mu, L, N, alphas):
         'Only lognormal distribution is implemented'
 
     mu_tilde_i = np.zeros((len(mu_i), len(alphas), N))
+    num_iters = np.zeros((len(alphas), N))
     for i in range(0, N):
-        mu_tilde_i[:, :, i] = single_simulation(mu_i, sigma_i, v_i, q_i, mu, L, alphas)
-    return mu_tilde_i
+        (mu_tilde_i[:, :, i], num_iters[:, i]) = single_simulation(mu_i, sigma_i, v_i, q_i, mu, L, alphas)
+    return (mu_tilde_i, num_iters)
 
 def plot_MAPE_mean(df_MAPE, filename):
     """
@@ -163,16 +169,18 @@ names = ['alpha = 1',
          'alpha = -2']
 
 # Run simulations
-mu_tilde_i = run_simulations(mu_i, sigma_i, v_i, q_i, mu, L, N, alphas)
+(mu_tilde_i, num_iters) = run_simulations(mu_i, sigma_i, v_i, q_i, mu, L, N, alphas)
 
 # Compute MAPES
 (error, error_mean) = compute_MAPEs(mu_i, mu_tilde_i)
 
 # Create pandas dataframe to store and plot the results
 df = gather_MAPE(mu_i, sigma_i, error, names)
+df_iters = gather_iters(num_iters, names)
 
 # Plot MAPE
 plot_MAPE(df, 'alphas_std')
+plot_iters(df_iters, 'alphas_std')
 
 # Second simulation: Different means, same standard deviations
 # Weight is equal to mu
@@ -200,16 +208,18 @@ names = ['alpha = 1',
          'alpha = -2']
 
 # Run simulations
-mu_tilde_i = run_simulations(mu_i, sigma_i, v_i, q_i, mu, L, N, alphas)
+(mu_tilde_i, num_iters) = run_simulations(mu_i, sigma_i, v_i, q_i, mu, L, N, alphas)
 
 # Compute MAPES
 (error, error_mean) = compute_MAPEs(mu_i, mu_tilde_i)
 
 # Create pandas dataframe to store and plot the results
 df = gather_MAPE(mu_i, sigma_i, error, names)
+df_iters = gather_iters(num_iters, names)
 
 # Plot MAPE
 plot_MAPE_mean(df, 'alphas_mean')
+plot_iters(df_iters, 'alphas_mean')
 
 # Third simulation: Generate voluntary wrong data
 # and see how much raking decreases the error
@@ -237,7 +247,7 @@ alphas = [1, 0, -0.5, -1, -2]
 
 mu_tilde_i = np.zeros((n, len(alphas)))
 for index, alpha in enumerate(alphas):
-    mu_tilde_i[:, index] = raking_general_distance(x_i, v_i, q_i, alpha, mu)
+    mu_tilde_i[:, index] = raking_general_distance(x_i, v_i, q_i, alpha, mu, 500, False, True)
 
 # Plotting the true means, original observations, and raked observations
 plt.figure(figsize=(12, 6))
