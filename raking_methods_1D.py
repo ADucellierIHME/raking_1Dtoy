@@ -32,13 +32,14 @@ def raking_chi2_distance(x_i, q_i, v_i, mu, direct=True):
         lambda_k = (np.sum(v_i * x_i) - mu) / np.sum(q_i * np.square(v_i) * x_i)
         mu_i = x_i * (1.0 - q_i * v_i * lambda_k)
     else:
-        Phi = np.concatenate((np.concatenate((np.diag(1.0 / x_i), \
-            (q_i * v_i).reshape((-1, 1))), axis=1), \
+        Phi = np.concatenate((np.concatenate((np.diag(1.0 / (q_i * x_i)), \
+            v_i.reshape((-1, 1))), axis=1), \
             np.array(v_i.tolist() + [0.0]).reshape((-1, len(v_i) + 1))), axis=0)
-        y = np.array(np.repeat(1.0, len(x_i)).tolist() + [mu])
+        y = np.array((1.0 / q_i).tolist() + [mu])
         result = np.linalg.solve(Phi, y)
         mu_i = result[0:-1]
-    return mu_i
+        lambda_k = result[-1]
+    return (mu_i, lambda_k)
 
 def raking_l2_distance(x_i, q_i, v_i, mu, direct=True):
     """
@@ -68,15 +69,16 @@ def raking_l2_distance(x_i, q_i, v_i, mu, direct=True):
         lambda_k = (np.sum(v_i * x_i) - mu) / np.sum(q_i * np.square(v_i))
         mu_i = x_i - q_i * v_i * lambda_k
     else:
-        Phi = np.concatenate((np.concatenate((np.eye(len(v_i)), \
-            (q_i * v_i).reshape((-1, 1))), axis=1), \
+        Phi = np.concatenate((np.concatenate((np.diag(1.0 / q_i), \
+            v_i.reshape((-1, 1))), axis=1), \
             np.array(v_i.tolist() + [0.0]).reshape((-1, len(v_i) + 1))), axis=0)
-        y = np.array(x_i.tolist() + [mu])
+        y = np.array((x_i / q_i).tolist() + [mu])
         result = np.linalg.solve(Phi, y)
         mu_i = result[0:-1]
-    return mu_i
+    lambda_k = result[-1]
+    return (mu_i, lambda_k)
 
-def raking_entropic_distance(x_i, q_i, v_i, mu, max_iter=500, return_num_iter=False, direct=True):
+def raking_entropic_distance(x_i, q_i, v_i, mu, gamma0=1.0, max_iter=500, return_num_iter=False, direct=True):
     """
     Raking using the entropic distance mu log(mu/x) + x - mu.
     Input:
@@ -84,6 +86,7 @@ def raking_entropic_distance(x_i, q_i, v_i, mu, max_iter=500, return_num_iter=Fa
       q_i: 1D Numpy array, weights for the observations
       v_i: 1D Numpy array, weights for the linear constraint (usually 1)
       mu: scalar, total of the linear constraint
+      gamma0: scalar, initial value for line search
       max_iter: integer, maximum number of iterations for Newton's method
       return_num_iter: boolean, whether we return the number of iterations
       direct: boolean, if True, we solve for lambda and compute mu;
@@ -106,24 +109,24 @@ def raking_entropic_distance(x_i, q_i, v_i, mu, max_iter=500, return_num_iter=Fa
     if direct:
         lambda_k = 0.0
         iter_eps = 0
-        while (epsilon > 1.0e-8) & (iter_eps < max_iter):
+        while (epsilon > 1.0e-6) & (iter_eps < max_iter):
             f1 = mu - np.sum(v_i * x_i * np.exp(- q_i * v_i * lambda_k))
             f2 = np.sum(q_i * np.square(v_i) * x_i * np.exp(- q_i * v_i * lambda_k))
             lambda_k = lambda_k - f1 / f2
-            epsilon = abs(f1 / f2)
+            mu_i = x_i * np.exp(- q_i * v_i * lambda_k)
+            epsilon = abs(mu - np.sum(v_i * mu_i))
             iter_eps = iter_eps + 1
-        mu_i = x_i * np.exp(- q_i * v_i * lambda_k)
     else:
         mu_k = np.copy(x_i)
         lambda_k = 0.0
         result = np.array(mu_k.tolist() + [lambda_k])
         iter_eps = 0
-        while (epsilon > 1.0e-8) & (iter_eps < max_iter):
-            Phi = np.concatenate((np.concatenate((np.diag(1.0 / mu_k), \
-                (q_i * v_i).reshape((-1, 1))), axis=1), \
+        while (epsilon > 1.0e-6) & (iter_eps < max_iter):
+            Phi = np.concatenate((np.concatenate((np.diag(1.0 / (q_i * mu_k)), \
+                v_i.reshape((-1, 1))), axis=1), \
                 np.array(v_i.tolist() + [0.0]).reshape((-1, len(v_i) + 1))), axis=0)
-            y = np.array((np.log(mu_k / x_i) + q_i * v_i * lambda_k).tolist() + [np.sum(v_i * mu_k) - mu])
-            gamma = 1.0
+            y = np.array((np.log(mu_k / x_i) / q_i + v_i * lambda_k).tolist() + [np.sum(v_i * mu_k) - mu])
+            gamma = gamma0
             iter_gam = 0
             result_tmp = result - gamma * np.linalg.solve(Phi, y)
             mu_k_tmp = result_tmp[0:-1]
@@ -137,15 +140,15 @@ def raking_entropic_distance(x_i, q_i, v_i, mu, max_iter=500, return_num_iter=Fa
             result = result - gamma * np.linalg.solve(Phi, y)
             mu_k = result[0:-1]
             lambda_k = result[-1]
-            epsilon = np.sum(np.abs(gamma * np.linalg.solve(Phi, y)))
+            epsilon = abs(mu - np.sum(v_i * mu_k))
             iter_eps = iter_eps + 1
         mu_i = mu_k
     if return_num_iter:
-        return [mu_i, iter_eps]
+        return (mu_i, lambda_k, iter_eps)
     else:
-        return mu_i
+        return (mu_i, lambda_k)
 
-def raking_inverse_entropic_distance(x_i, q_i, v_i, mu, max_iter=500, return_num_iter=False, direct=True):
+def raking_inverse_entropic_distance(x_i, q_i, v_i, mu, gamma0=1.0, max_iter=500, return_num_iter=False, direct=True):
     """
     Raking using the inverse entropic distance x log(x/mu) + mu - x.
     Input:
@@ -153,6 +156,7 @@ def raking_inverse_entropic_distance(x_i, q_i, v_i, mu, max_iter=500, return_num
       q_i: 1D Numpy array, weights for the observations
       v_i: 1D Numpy array, weights for the linear constraint (usually 1)
       mu: scalar, total of the linear constraint
+      gamma0: scalar, initial value for line search
       max_iter: integer, maximum number of iterations for Newton's method
       return_num_iter: boolean, whether we return the number of iterations
       direct: boolean, if True, we solve for lambda and compute mu;
@@ -175,24 +179,24 @@ def raking_inverse_entropic_distance(x_i, q_i, v_i, mu, max_iter=500, return_num
     if direct:
         lambda_k = 0.0
         iter_eps = 0
-        while (epsilon > 1.0e-8) & (iter_eps < max_iter):
+        while (epsilon > 1.0e-6) & (iter_eps < max_iter):
             f1 = mu - np.sum(v_i * x_i /(1.0 + q_i * v_i * lambda_k))
-            f2 = np.sum(q_i * np.square(v_i) * x_i / np.square(1 + q_i * v_i * lambda_k))
+            f2 = np.sum(q_i * np.square(v_i) * x_i / np.square(1.0 + q_i * v_i * lambda_k))
             lambda_k = lambda_k - f1 / f2
-            epsilon = abs(f1 / f2)
+            mu_i = x_i / (1.0 + q_i * v_i * lambda_k)
+            epsilon = abs(mu - np.sum(v_i * mu_i))
             iter_eps = iter_eps + 1
-        mu_i = x_i / (1.0 + q_i * v_i * lambda_k)
     else:
         mu_k = np.copy(x_i)
         lambda_k = 0.0
         result = np.array(mu_k.tolist() + [lambda_k])
         iter_eps = 0
-        while (epsilon > 1.0e-8) & (iter_eps < max_iter):
-            Phi = np.concatenate((np.concatenate((np.diag(np.power(x_i, 2.0) / np.power(mu_k, 3.0)), \
-                (q_i * v_i).reshape((-1, 1))), axis=1), \
+        while (epsilon > 1.0e-6) & (iter_eps < max_iter):
+            Phi = np.concatenate((np.concatenate((np.diag(x_i / (q_i * np.square(mu_k))), \
+                v_i.reshape((-1, 1))), axis=1), \
                 np.array(v_i.tolist() + [0.0]).reshape((-1, len(v_i) + 1))), axis=0)
-            y = np.array((1.0 - (x_i / mu_k) + q_i * v_i * lambda_k).tolist() + [np.sum(v_i * mu_k) - mu])
-            gamma = 1.0
+            y = np.array(((1.0 - x_i / mu_k) / q_i + v_i * lambda_k).tolist() + [np.sum(v_i * mu_k) - mu])
+            gamma = gamma0
             iter_gam = 0
             result_tmp = result - gamma * np.linalg.solve(Phi, y)
             mu_k_tmp = result_tmp[0:-1]
@@ -206,15 +210,15 @@ def raking_inverse_entropic_distance(x_i, q_i, v_i, mu, max_iter=500, return_num
             result = result - gamma * np.linalg.solve(Phi, y)
             mu_k = result[0:-1]
             lambda_k = result[-1]
-            epsilon = np.sum(np.abs(gamma * np.linalg.solve(Phi, y)))
+            epsilon = abs(mu - np.sum(v_i * mu_k))
             iter_eps = iter_eps + 1
         mu_i = mu_k
     if return_num_iter:
-        return [mu_i, iter_eps]
+        return (mu_i, lambda_k, iter_eps)
     else:
-        return mu_i
+        return (mu_i, lambda_k)
 
-def raking_inverse_chi2_distance(x_i, q_i, v_i, mu, max_iter=500, return_num_iter=False, direct=True):
+def raking_inverse_chi2_distance(x_i, q_i, v_i, mu, gamma0=1.0, max_iter=500, return_num_iter=False, direct=True):
     """
     Raking using the inverse chi2 distance (x - mu)^2 / 2mu.
     Input:
@@ -222,6 +226,7 @@ def raking_inverse_chi2_distance(x_i, q_i, v_i, mu, max_iter=500, return_num_ite
       q_i: 1D Numpy array, weights for the observations
       v_i: 1D Numpy array, weights for the linear constraint (usually 1)
       mu: scalar, total of the linear constraint
+      gamma0: scalar, initial value for line search
       max_iter: integer, maximum number of iterations for Newton's method
       return_num_iter: boolean, whether we return the number of iterations
       direct: boolean, if True, we solve for lambda and compute mu;
@@ -244,31 +249,31 @@ def raking_inverse_chi2_distance(x_i, q_i, v_i, mu, max_iter=500, return_num_ite
     if direct:
         lambda_k = 0.0
         iter_eps = 0
-        while (epsilon > 1.0e-8) & (iter_eps < max_iter):
+        while (epsilon > 1.0e-6) & (iter_eps < max_iter):
             f1 = mu - np.sum(v_i * x_i / np.sqrt(1.0 + 2.0 * q_i * v_i * lambda_k))
             f2 = np.sum(q_i * np.square(v_i) * x_i / np.power(1 + 2.0 * q_i * v_i * lambda_k, 3.0 / 2.0))
-            gamma = 1.0
+            gamma = gamma0
             iter_gam = 0
             while (np.any(1 + 2.0 * q_i * v_i * (lambda_k - gamma * f1 / f2) <= 0.0)) & \
                   (iter_gam < max_iter):
                 gamma = gamma / 2.0
                 iter_gam = iter_gam + 1
             lambda_k = lambda_k - gamma * f1 / f2
-            epsilon = gamma * abs(f1 / f2)
+            mu_i = x_i / np.sqrt(1.0 + 2.0 * q_i * v_i * lambda_k)
+            epsilon = abs(mu - np.sum(v_i * mu_i))
             iter_eps = iter_eps + 1
-        mu_i = x_i / np.sqrt(1.0 + 2.0 * q_i * v_i * lambda_k)
     else:
         mu_k = np.copy(x_i)
         lambda_k = 0.0
         result = np.array(mu_k.tolist() + [lambda_k])
         iter_eps = 0
-        while (epsilon > 1.0e-8) & (iter_eps < max_iter):
-            Phi = np.concatenate((np.concatenate((np.diag(np.power(x_i, 3.0) / np.power(mu_k, 4.0)), \
-                (q_i * v_i).reshape((-1, 1))), axis=1), \
+        while (epsilon > 1.0e-6) & (iter_eps < max_iter):
+            Phi = np.concatenate((np.concatenate((np.diag(np.square(x_i) / (q_i * np.power(mu_k, 3.0))), \
+                v_i.reshape((-1, 1))), axis=1), \
                 np.array(v_i.tolist() + [0.0]).reshape((-1, len(v_i) + 1))), axis=0)
-            y = np.array(((1.0 - np.power(x_i, 2.0) / np.power(mu_k, 2.0)) / 2.0 + q_i * v_i * lambda_k).tolist() + \
+            y = np.array(((1.0 - np.square(x_i) / np.square(mu_k)) / (2.0 * q_i) + v_i * lambda_k).tolist() + \
                 [np.sum(v_i * mu_k) - mu])
-            gamma = 1.0
+            gamma = gamma0
             iter_gam = 0
             result_tmp = result - gamma * np.linalg.solve(Phi, y)
             mu_k_tmp = result_tmp[0:-1]
@@ -284,15 +289,15 @@ def raking_inverse_chi2_distance(x_i, q_i, v_i, mu, max_iter=500, return_num_ite
             result = result - gamma * np.linalg.solve(Phi, y)
             mu_k = result[0:-1]
             lambda_k = result[-1]
-            epsilon = np.sum(np.abs(gamma * np.linalg.solve(Phi, y)))
+            epsilon = abs(mu - np.sum(v_i * mu_k))
             iter_eps = iter_eps + 1
         mu_i = mu_k
     if return_num_iter:
-        return [mu_i, iter_eps]
+        return (mu_i, lambda_k, iter_eps)
     else:
-        return mu_i
+        return (mu_i, lambda_k)
 
-def raking_general_distance(x_i, q_i, v_i, alpha, mu, max_iter=500, return_num_iter=False, direct=True):
+def raking_general_distance(x_i, q_i, v_i, alpha, mu, gamma0=1.0, max_iter=500, return_num_iter=False, direct=True):
     """
     Raking using general distance.
     Input:
@@ -301,6 +306,7 @@ def raking_general_distance(x_i, q_i, v_i, alpha, mu, max_iter=500, return_num_i
       v_i: 1D Numpy array, weights for the linear constraint (usually 1)
       alpha: scalar, paremeter of the general distance function
       mu: scalar, total of the linear constraint
+      gamma0: scalar, initial value for line search
       max_iter: integer, maximum number of iterations for Newton's method
       return_num_iter: boolean, whether we return the number of iterations
       direct: boolean, if True, we solve for lambda and compute mu;
@@ -321,13 +327,13 @@ def raking_general_distance(x_i, q_i, v_i, alpha, mu, max_iter=500, return_num_i
 
     if alpha == 1:
         iter_eps = 1
-        mu_i = raking_chi2_distance(x_i, q_i, v_i, mu, direct)
+        (mu_i, lambda_k) = raking_chi2_distance(x_i, q_i, v_i, mu, direct)
     else:
         epsilon = 1.0
         if direct:
             lambda_k = 0.0
             iter_eps = 0
-            while (epsilon > 1.0e-8) & (iter_eps < max_iter):
+            while (epsilon > 1.0e-6) & (iter_eps < max_iter):
                 if alpha == 0:
                     f1 = mu - np.sum(v_i * x_i * np.exp(- q_i * v_i * lambda_k))
                     f2 = np.sum(q_i * np.square(v_i) * x_i * np.exp(- q_i * v_i * lambda_k))
@@ -335,46 +341,46 @@ def raking_general_distance(x_i, q_i, v_i, alpha, mu, max_iter=500, return_num_i
                     f1 = mu - np.sum(v_i * x_i * np.power(1.0 - alpha * q_i * v_i * lambda_k, 1.0 / alpha))
                     f2 = np.sum(q_i * np.square(v_i) * x_i * np.power(1.0 - alpha * q_i * v_i * lambda_k, 1.0 / alpha - 1.0))
                 if (alpha > 0.5) or (alpha < -1.0):
-                    gamma = 1.0
+                    gamma = gamma0
                     iter_gam = 0
                     while (np.any(1 - alpha * q_i * v_i * (lambda_k - gamma * f1 / f2) <= 0.0)) & \
                           (iter_gam < max_iter):
                         gamma = gamma / 2.0
                         iter_gam = iter_gam + 1
                 else:
-                    gamma = 1.0
+                    gamma = gamma0
                 lambda_k = lambda_k - gamma * f1 / f2
-                epsilon = gamma * abs(f1 / f2)
+                if alpha == 0:
+                    mu_i = x_i * np.exp(- q_i * v_i * lambda_k)
+                else:
+                    mu_i = x_i * np.power(1.0 - alpha * q_i * v_i * lambda_k, 1.0 / alpha)
+                epsilon = abs(mu - np.sum(v_i * mu_i))
                 iter_eps = iter_eps + 1
-            if alpha == 0:
-                mu_i = x_i * np.exp(- q_i * v_i * lambda_k)
-            else:
-                mu_i = x_i * np.power(1.0 - alpha * q_i * v_i * lambda_k, 1.0 / alpha)
         else:
             mu_k = np.copy(x_i)
             lambda_k = 0.0
             result = np.array(mu_k.tolist() + [lambda_k])
             iter_eps = 0
-            while (epsilon > 1.0e-8) & (iter_eps < max_iter):
+            while (epsilon > 1.0e-6) & (iter_eps < max_iter):
                 if alpha == 0:
-                    Phi = np.concatenate((np.concatenate((np.diag(1.0 / mu_k), \
-                       (q_i * v_i).reshape((-1, 1))), axis=1), \
+                    Phi = np.concatenate((np.concatenate((np.diag(1.0 / (q_i * mu_k)), \
+                       v_i.reshape((-1, 1))), axis=1), \
                        np.array(v_i.tolist() + [0.0]).reshape((-1, len(v_i) + 1))), axis=0)
-                    y = np.array((np.log(mu_k / x_i) + q_i * v_i * lambda_k).tolist() + [np.sum(v_i * mu_k) - mu])
+                    y = np.array((np.log(mu_k / x_i) / q_i + v_i * lambda_k).tolist() + [np.sum(v_i * mu_k) - mu])
                 else:
-                    Phi = np.concatenate((np.concatenate((np.diag((1.0 / mu_k) * np.power(mu_k / x_i, alpha - 1.0)), \
-                        (q_i * v_i).reshape((-1, 1))), axis=1), \
+                    Phi = np.concatenate((np.concatenate((np.diag(np.power(mu_k / x_i, alpha - 1.0) / (q_i * x_i)), \
+                        v_i.reshape((-1, 1))), axis=1), \
                         np.array(v_i.tolist() + [0.0]).reshape((-1, len(v_i) + 1))), axis=0)
-                    y = np.array(((1.0 / alpha) * (np.power(mu_k / x_i, alpha)  - 1.0) + q_i * v_i * lambda_k).tolist() + \
+                    y = np.array(((np.power(mu_k / x_i, alpha)  - 1.0) / (q_i * alpha) + v_i * lambda_k).tolist() + \
                         [np.sum(v_i * mu_k) - mu])
-                gamma = 1.0
+                gamma = gamma0
                 iter_gam = 0
                 result_tmp = result - gamma * np.linalg.solve(Phi, y)
                 mu_k_tmp = result_tmp[0:-1]
                 lambda_k_tmp = result_tmp[-1]
                 if (alpha > 0.5) or (alpha < -1.0):
                     while ((np.any(mu_k_tmp < 0.0)) |
-                           (np.any(1 - alpha * q_i * v_i * lambda_k_tmp <= 0.0))) & \
+                           (np.any(1.0 - alpha * q_i * v_i * lambda_k_tmp <= 0.0))) & \
                           (iter_gam < max_iter):
                         gamma = gamma / 2.0
                         iter_gam = iter_gam + 1
@@ -391,15 +397,15 @@ def raking_general_distance(x_i, q_i, v_i, alpha, mu, max_iter=500, return_num_i
                 result = result - gamma * np.linalg.solve(Phi, y)
                 mu_k = result[0:-1]
                 lambda_k = result[-1]
-                epsilon = np.sum(np.abs(gamma * np.linalg.solve(Phi, y)))
+                epsilon = abs(mu - np.sum(v_i * mu_k))
                 iter_eps = iter_eps + 1
             mu_i = mu_k
     if return_num_iter:
-        return [mu_i, iter_eps]
+        return (mu_i, lambda_k, iter_eps)
     else:
-        return mu_i
+        return (mu_i, lambda_k)
 
-def raking_logit(x_i, l_i, h_i, q_i, v_i, mu, max_iter=500, return_num_iter=False, direct=True):
+def raking_logit(x_i, l_i, h_i, q_i, v_i, mu, gamma0=1.0, max_iter=500, return_num_iter=False, direct=True):
     """
     Logit raking ensuring that l_i < mu_i < h_i.
     Input:
@@ -409,6 +415,7 @@ def raking_logit(x_i, l_i, h_i, q_i, v_i, mu, max_iter=500, return_num_iter=Fals
       q_i: 1D Numpy array, weights for the observations
       v_i: 1D Numpy array, weights for the linear constraint (usually 1)
       mu: scalar, total of the linear constraint
+      gamma0: scalar, initial value for line search
       max_iter: integer, maximum number of iterations for Newton's method
     return_num_iter: boolean, whether we return the number of iterations
       direct: boolean, if True, we solve for lambda and compute mu;
@@ -439,7 +446,7 @@ def raking_logit(x_i, l_i, h_i, q_i, v_i, mu, max_iter=500, return_num_iter=Fals
     if direct:
         lambda_k = 0.0
         iter_eps = 0
-        while (epsilon > 1.0e-8) & (iter_eps < max_iter):
+        while (epsilon > 1.0e-6) & (iter_eps < max_iter):
             f1 = mu - np.sum(v_i * (l_i * (h_i - x_i) + \
                 h_i * (x_i - l_i) * np.exp(- q_i * v_i * lambda_k)) / \
                 ((h_i - x_i) + (x_i - l_i) * np.exp(- q_i * v_i * lambda_k)))
@@ -447,23 +454,23 @@ def raking_logit(x_i, l_i, h_i, q_i, v_i, mu, max_iter=500, return_num_iter=Fals
                 np.exp(- q_i * v_i * lambda_k)) / \
                 np.square((h_i - x_i) + (x_i - l_i) * np.exp(- q_i * v_i * lambda_k)))  
             lambda_k = lambda_k - f1 / f2
-            epsilon = abs(f1 / f2)
+            mu_i = v_i * (l_i * (h_i - x_i) + \
+                h_i * (x_i - l_i) * np.exp(- q_i * v_i * lambda_k)) / \
+                ((h_i - x_i) + (x_i - l_i) * np.exp(- q_i * v_i * lambda_k))
+            epsilon = abs(mu - np.sum(v_i * mu_i))
             iter_eps = iter_eps + 1
-        mu_i = v_i * (l_i * (h_i - x_i) + \
-            h_i * (x_i - l_i) * np.exp(- q_i * v_i * lambda_k)) / \
-            ((h_i - x_i) + (x_i - l_i) * np.exp(- q_i * v_i * lambda_k))
     else:
         mu_k = np.copy(x_i)
         lambda_k = 0.0
         result = np.array(mu_k.tolist() + [lambda_k])
         iter_eps = 0
-        while (epsilon > 1.0e-8) & (iter_eps < max_iter):
-            Phi = np.concatenate((np.concatenate((np.diag(1.0 / (mu_k - l_i) + 1.0 / (h_i - mu_k)), \
-                (q_i * v_i).reshape((-1, 1))), axis=1), \
+        while (epsilon > 1.0e-6) & (iter_eps < max_iter):
+            Phi = np.concatenate((np.concatenate((np.diag((1.0 / (mu_k - l_i) + 1.0 / (h_i - mu_k)) / q_i), \
+                v_i.reshape((-1, 1))), axis=1), \
                 np.array(v_i.tolist() + [0.0]).reshape((-1, len(v_i) + 1))), axis=0)
-            y = np.array((np.log((mu_k - l_i) / (x_i - l_i)) - np.log((h_i - mu_k) / (h_i - x_i)) + q_i * v_i * lambda_k).tolist() + \
+            y = np.array(((np.log((mu_k - l_i) / (x_i - l_i)) - np.log((h_i - mu_k) / (h_i - x_i))) / q_i + v_i * lambda_k).tolist() + \
                 [np.sum(v_i * mu_k) - mu])
-            gamma = 1.0
+            gamma = gamma0
             iter_gam = 0
             result_tmp = result - gamma * np.linalg.solve(Phi, y)
             mu_k_tmp = result_tmp[0:-1]
@@ -477,13 +484,13 @@ def raking_logit(x_i, l_i, h_i, q_i, v_i, mu, max_iter=500, return_num_iter=Fals
             result = result - gamma * np.linalg.solve(Phi, y)
             mu_k = result[0:-1]
             lambda_k = result[-1]
-            epsilon = np.sum(np.abs(gamma * np.linalg.solve(Phi, y)))
+            epsilon = abs(mu - np.sum(v_i * mu_k))
             iter_eps = iter_eps + 1
         mu_i = mu_k
     if return_num_iter:
-        return [mu_i, iter_eps]
+        return (mu_i, lambda_k, iter_eps)
     else:
-        return mu_i
+        return (mu_i, lambda_k)
 
 def raking_vectorized_entropic_distance(df, agg_var, constant_vars=[]):
     """
