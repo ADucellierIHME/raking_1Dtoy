@@ -75,7 +75,7 @@ def raking_l2_distance(x_i, q_i, v_i, mu, direct=True):
         y = np.array((x_i / q_i).tolist() + [mu])
         result = np.linalg.solve(Phi, y)
         mu_i = result[0:-1]
-    lambda_k = result[-1]
+        lambda_k = result[-1]
     return (mu_i, lambda_k)
 
 def raking_entropic_distance(x_i, q_i, v_i, mu, gamma0=1.0, max_iter=500, return_num_iter=False, direct=True):

@@ -36,7 +36,7 @@ for race in races:
     if len(df_sub['all_cause_value'].unique()) != 1:
         print('The margin should be the same for all causes.')
     mu = df_sub['all_cause_value'].iloc[0]
-    result = raking_entropic_distance(x_i, np.ones(len(x_i)), np.ones(len(x_i)), mu, 500, False, True)
+    (result, lambda_k) = raking_entropic_distance(x_i, np.ones(len(x_i)), np.ones(len(x_i)), mu, 1.0, 500, False, True)
     df_sub['value_raked'] = result
     df_raked.append(df_sub)
 df_raked = pd.concat(df_raked)
@@ -61,7 +61,7 @@ for cause in causes:
     if len(df_sub['all_race_value'].unique()) != 1:
         print('The margin should be the same for all races.')
     mu = df_sub['all_race_value'].iloc[0]
-    result = raking_entropic_distance(x_i, np.ones(len(x_i)), np.ones(len(x_i)), mu, 500, False, True)
+    (result, lambda_k) = raking_entropic_distance(x_i, np.ones(len(x_i)), np.ones(len(x_i)), mu, 1.0, 500, False, True)
     df_sub['value_raked'] = result
     df_raked.append(df_sub)
 df_raked = pd.concat(df_raked)
@@ -88,7 +88,7 @@ for race in races:
     if len(df_sub['all_cause_value'].unique()) != 1:
         print('The margin should be the same for all causes.')
     mu = df_sub['all_cause_value'].iloc[0]
-    result = raking_l2_distance(x_i, np.ones(len(x_i)), np.ones(len(x_i)), mu, True)
+    (result, lambda_k) = raking_l2_distance(x_i, np.ones(len(x_i)), np.ones(len(x_i)), mu, True)
     df_sub['value_raked'] = result
     df_raked.append(df_sub)
 df_raked = pd.concat(df_raked)
@@ -113,7 +113,7 @@ for cause in causes:
     if len(df_sub['all_race_value'].unique()) != 1:
         print('The margin should be the same for all races.')
     mu = df_sub['all_race_value'].iloc[0]
-    result = raking_l2_distance(x_i, np.ones(len(x_i)), np.ones(len(x_i)), mu, True)
+    (result, lambda_k) = raking_l2_distance(x_i, np.ones(len(x_i)), np.ones(len(x_i)), mu, True)
     df_sub['value_raked'] = result
     df_raked.append(df_sub)
 df_raked = pd.concat(df_raked)

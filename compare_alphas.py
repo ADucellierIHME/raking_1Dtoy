@@ -53,7 +53,7 @@ def single_simulation(mu_i, sigma_i, v_i, q_i, mu, L, alphas):
     mu_tilde_i = np.zeros((len(x_i), len(alphas)))
     num_iters = np.zeros(len(alphas))
     for index, alpha in enumerate(alphas):
-        (mu_tilde_i[:, index], num_iters[index]) = raking_general_distance(x_i, v_i, q_i, alpha, mu, 500, True, True)
+        (mu_tilde_i[:, index], lambda_k, num_iters[index]) = raking_general_distance(x_i, v_i, q_i, alpha, mu, 1.0, 500, True, True)
     return (mu_tilde_i, num_iters)
 
 def run_simulations(mu_i, sigma_i, v_i, q_i, mu, L, N, alphas):
@@ -247,7 +247,7 @@ alphas = [1, 0, -0.5, -1, -2]
 
 mu_tilde_i = np.zeros((n, len(alphas)))
 for index, alpha in enumerate(alphas):
-    mu_tilde_i[:, index] = raking_general_distance(x_i, v_i, q_i, alpha, mu, 500, False, True)
+    (mu_tilde_i[:, index], lambda_k) = raking_general_distance(x_i, v_i, q_i, alpha, mu, 1.0, 500, False, True)
 
 # Plotting the true means, original observations, and raked observations
 plt.figure(figsize=(12, 6))
@@ -269,7 +269,6 @@ plt.title('Comparison of True Means, Original Observations, and Raked Observatio
 plt.xlabel('Variables')
 plt.ylabel('Values')
 plt.xticks(np.arange(n), labels=[f"{multiplier:.2f}" for multiplier in multipliers])
-#plt.ylim([-0.5, 1.5])
 plt.legend()
 plt.grid(True)
 plt.savefig('compare_raked_observations.png')

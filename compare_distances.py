@@ -54,11 +54,11 @@ def single_simulation(mu_i, sigma_i, mu, L):
     mu_tilde_i = np.zeros((len(x_i), 6))
     num_iters = np.zeros(6)
     (mu_tilde_i[:, 0], lambda_k) = raking_chi2_distance(x_i, q_i, v_i, mu, True)
-    (mu_tilde_i[:, 1], lambda_k, num_iters[1]) = raking_entropic_distance(x_i, q_i, v_i, mu, 500, True, True)
-    (mu_tilde_i[:, 2], lambda_k, num_iters[2]) = raking_inverse_entropic_distance(x_i, q_i, v_i, mu, 500, True, True)
-    (mu_tilde_i[:, 3], lambda_k, num_iters[3]) = raking_inverse_chi2_distance(x_i, q_i, v_i, mu, 500, True, True)
+    (mu_tilde_i[:, 1], lambda_k, num_iters[1]) = raking_entropic_distance(x_i, q_i, v_i, mu, 1.0, 500, True, True)
+    (mu_tilde_i[:, 2], lambda_k, num_iters[2]) = raking_inverse_entropic_distance(x_i, q_i, v_i, mu, 1.0, 500, True, True)
+    (mu_tilde_i[:, 3], lambda_k, num_iters[3]) = raking_inverse_chi2_distance(x_i, q_i, v_i, mu, 1.0, 500, True, True)
     (mu_tilde_i[:, 4], lambda_k) = raking_l2_distance(x_i, q_i, v_i, mu, True)
-    (mu_tilde_i[:, 5], lambda_k, num_iters[5]) = raking_logit(x_i, l_i, h_i, q_i, v_i, mu, 500, True, True)
+    (mu_tilde_i[:, 5], lambda_k, num_iters[5]) = raking_logit(x_i, l_i, h_i, q_i, v_i, mu, 1.0, 500, True, True)
 
     return (mu_tilde_i, num_iters)
 
