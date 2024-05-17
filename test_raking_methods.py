@@ -42,17 +42,18 @@ for race in races:
     if len(df_sub['all_cause_value'].unique()) != 1:
         print('The margin should be the same for all causes.')
     mu = df_sub['all_cause_value'].iloc[0]
-    (result_direct, lambda_k) = raking_chi2_distance(x_i, np.ones(len(x_i)), np.ones(len(x_i)), mu, True)
+    (result_direct, lambda_k_direct) = raking_chi2_distance(x_i, np.ones(len(x_i)), np.ones(len(x_i)), mu, True)
     df_sub['value_raked_direct'] = result_direct
-    (result_full, lambda_k) = raking_chi2_distance(x_i, np.ones(len(x_i)), np.ones(len(x_i)), mu, False)
+    (result_full, lambda_k_full) = raking_chi2_distance(x_i, np.ones(len(x_i)), np.ones(len(x_i)), mu, False)
     df_sub['value_raked_full'] = result_full
     df_raked_cause.append(df_sub)
 df_raked_cause = pd.concat(df_raked_cause)
 df_raked_cause.sort_values(by=['race', 'cause'], inplace=True)
 
 # Compare values between two raking methods
-print('Chi2 distance, rake by cause, diff = ', \
+print('Chi2 distance, rake by cause, diff mu = ', \
     np.sum(np.abs(df_raked_cause['value_raked_direct'].to_numpy() - df_raked_cause['value_raked_full'].to_numpy())))
+print('Chi2 distance, rake by cause, diff lambda = ', abs(lambda_k_direct - lambda_k_full))
 
 # For each cause, rake by race using both functions
 causes = df['cause'].unique().tolist()
@@ -63,17 +64,18 @@ for cause in causes:
     if len(df_sub['all_race_value'].unique()) != 1:
         print('The margin should be the same for all races.')
     mu = df_sub['all_race_value'].iloc[0]
-    (result_direct, lambda_k) = raking_chi2_distance(x_i, np.ones(len(x_i)), np.ones(len(x_i)), mu, True)
+    (result_direct, lambda_k_direct) = raking_chi2_distance(x_i, np.ones(len(x_i)), np.ones(len(x_i)), mu, True)
     df_sub['value_raked_direct'] = result_direct
-    (result_full, lambda_k) = raking_chi2_distance(x_i, np.ones(len(x_i)), np.ones(len(x_i)), mu, False)
+    (result_full, lambda_k_full) = raking_chi2_distance(x_i, np.ones(len(x_i)), np.ones(len(x_i)), mu, False)
     df_sub['value_raked_full'] = result_full
     df_raked_race.append(df_sub)
 df_raked_race = pd.concat(df_raked_race)
 df_raked_race.sort_values(by=['race', 'cause'], inplace=True)
 
 # Compare values between two raking methods
-print('Chi2 distance, rake by race, diff = ', \
+print('Chi2 distance, rake by race, diff mu = ', \
     np.sum(np.abs(df_raked_race['value_raked_direct'].to_numpy() - df_raked_race['value_raked_full'].to_numpy())))
+print('Chi2 distance, rake by race, diff lambda = ', abs(lambda_k_direct - lambda_k_full))
 
 # Test l2 distance
 # ----------------
@@ -87,17 +89,18 @@ for race in races:
     if len(df_sub['all_cause_value'].unique()) != 1:
         print('The margin should be the same for all causes.')
     mu = df_sub['all_cause_value'].iloc[0]
-    (result_direct, lambda_k) = raking_l2_distance(x_i, np.ones(len(x_i)), np.ones(len(x_i)), mu, True)
+    (result_direct, lambda_k_direct) = raking_l2_distance(x_i, np.ones(len(x_i)), np.ones(len(x_i)), mu, True)
     df_sub['value_raked_direct'] = result_direct
-    (result_full, lambda_k) = raking_l2_distance(x_i, np.ones(len(x_i)), np.ones(len(x_i)), mu, False)
+    (result_full, lambda_k_full) = raking_l2_distance(x_i, np.ones(len(x_i)), np.ones(len(x_i)), mu, False)
     df_sub['value_raked_full'] = result_full
     df_raked_cause.append(df_sub)
 df_raked_cause = pd.concat(df_raked_cause)
 df_raked_cause.sort_values(by=['race', 'cause'], inplace=True)
 
 # Compare values between two raking methods
-print('L2 distance, rake by cause, diff = ', \
+print('L2 distance, rake by cause, diff mu = ', \
     np.sum(np.abs(df_raked_cause['value_raked_direct'].to_numpy() - df_raked_cause['value_raked_full'].to_numpy())))
+print('L2 distance, rake by cause, diff lambda = ', abs(lambda_k_direct - lambda_k_full))
 
 # For each cause, rake by race using both functions
 causes = df['cause'].unique().tolist()
@@ -108,17 +111,18 @@ for cause in causes:
     if len(df_sub['all_race_value'].unique()) != 1:
         print('The margin should be the same for all races.')
     mu = df_sub['all_race_value'].iloc[0]
-    (result_direct, lambda_k) = raking_l2_distance(x_i, np.ones(len(x_i)), np.ones(len(x_i)), mu, True)
+    (result_direct, lambda_k_direct) = raking_l2_distance(x_i, np.ones(len(x_i)), np.ones(len(x_i)), mu, True)
     df_sub['value_raked_direct'] = result_direct
-    (result_full, lambda_k) = raking_l2_distance(x_i, np.ones(len(x_i)), np.ones(len(x_i)), mu, False)
+    (result_full, lambda_k_full) = raking_l2_distance(x_i, np.ones(len(x_i)), np.ones(len(x_i)), mu, False)
     df_sub['value_raked_full'] = result_full
     df_raked_race.append(df_sub)
 df_raked_race = pd.concat(df_raked_race)
 df_raked_race.sort_values(by=['race', 'cause'], inplace=True)
 
 # Compare values between two raking methods
-print('L2 distance, rake by race, diff = ', \
+print('L2 distance, rake by race, diff mu = ', \
     np.sum(np.abs(df_raked_race['value_raked_direct'].to_numpy() - df_raked_race['value_raked_full'].to_numpy())))
+print('L2 distance, rake by race, diff lambda = ', abs(lambda_k_direct - lambda_k_full))
 
 # Test entropic distance
 # ----------------------
@@ -132,10 +136,10 @@ for race in races:
     if len(df_sub['all_cause_value'].unique()) != 1:
         print('The margin should be the same for all causes.')
     mu = df_sub['all_cause_value'].iloc[0]
-    (result_direct, lambda_k, num_iter) = raking_entropic_distance(x_i, np.ones(len(x_i)), np.ones(len(x_i)), mu, 1.0, 500, True, True)
+    (result_direct, lambda_k_direct, num_iter) = raking_entropic_distance(x_i, np.ones(len(x_i)), np.ones(len(x_i)), mu, 1.0, 500, True, True)
     print('Entropic distance - race ', race, ' - direct: ', num_iter, 'iterations')
     df_sub['value_raked_direct'] = result_direct
-    (result_full, lambda_k, num_iter) = raking_entropic_distance(x_i, np.ones(len(x_i)), np.ones(len(x_i)), mu, 1.0, 500, True, False)
+    (result_full, lambda_k_full, num_iter) = raking_entropic_distance(x_i, np.ones(len(x_i)), np.ones(len(x_i)), mu, 1.0, 500, True, False)
     print('Entropic distance - race ', race, ' - full: ', num_iter, 'iterations')
     df_sub['value_raked_full'] = result_full
     df_raked_cause.append(df_sub)
@@ -143,8 +147,9 @@ df_raked_cause = pd.concat(df_raked_cause)
 df_raked_cause.sort_values(by=['race', 'cause'], inplace=True)
 
 # Compare values between two raking methods
-print('Entropic distance, rake by cause, diff = ', \
+print('Entropic distance, rake by cause, diff mu = ', \
     np.sum(np.abs(df_raked_cause['value_raked_direct'].to_numpy() - df_raked_cause['value_raked_full'].to_numpy())))
+print('Entropic distance, rake by cause, diff lambda = ', abs(lambda_k_direct - lambda_k_full))
 
 # For each cause, rake by race using both functions
 causes = df['cause'].unique().tolist()
@@ -155,10 +160,10 @@ for cause in causes:
     if len(df_sub['all_race_value'].unique()) != 1:
         print('The margin should be the same for all races.')
     mu = df_sub['all_race_value'].iloc[0]
-    (result_direct, lambda_k, num_iter) = raking_entropic_distance(x_i, np.ones(len(x_i)), np.ones(len(x_i)), mu, 1.0, 500, True, True)
+    (result_direct, lambda_k_direct, num_iter) = raking_entropic_distance(x_i, np.ones(len(x_i)), np.ones(len(x_i)), mu, 1.0, 500, True, True)
     print('Entropic distance - cause ', cause, ' - direct: ', num_iter, 'iterations')
     df_sub['value_raked_direct'] = result_direct
-    (result_full, lambda_k, num_iter) = raking_entropic_distance(x_i, np.ones(len(x_i)), np.ones(len(x_i)), mu, 1.0, 500, True, False)
+    (result_full, lambda_k_full, num_iter) = raking_entropic_distance(x_i, np.ones(len(x_i)), np.ones(len(x_i)), mu, 1.0, 500, True, False)
     print('Entropic distance - cause ', cause, ' - full: ', num_iter, 'iterations')
     df_sub['value_raked_full'] = result_full
     df_raked_race.append(df_sub)
@@ -166,8 +171,9 @@ df_raked_race = pd.concat(df_raked_race)
 df_raked_race.sort_values(by=['race', 'cause'], inplace=True)
 
 # Compare values between two raking methods
-print('Entropic distance, rake by race, diff = ', \
+print('Entropic distance, rake by race, diff mu = ', \
     np.sum(np.abs(df_raked_race['value_raked_direct'].to_numpy() - df_raked_race['value_raked_full'].to_numpy())))
+print('Entropic distance, rake by cause, diff lambda = ', abs(lambda_k_direct - lambda_k_full))
 
 # Test inverse entropic distance
 # ------------------------------
@@ -181,10 +187,10 @@ for race in races:
     if len(df_sub['all_cause_value'].unique()) != 1:
         print('The margin should be the same for all causes.')
     mu = df_sub['all_cause_value'].iloc[0]
-    (result_direct, lambda_k, num_iter) = raking_inverse_entropic_distance(x_i, np.ones(len(x_i)), np.ones(len(x_i)), mu, 1.0, 500, True, True)
+    (result_direct, lambda_k_direct, num_iter) = raking_inverse_entropic_distance(x_i, np.ones(len(x_i)), np.ones(len(x_i)), mu, 1.0, 500, True, True)
     print('Inverse entropic distance - race ', race, ' - direct: ', num_iter, 'iterations')
     df_sub['value_raked_direct'] = result_direct
-    (result_full, lambda_k, num_iter) = raking_inverse_entropic_distance(x_i, np.ones(len(x_i)), np.ones(len(x_i)), mu, 1.0, 500, True, False)
+    (result_full, lambda_k_full, num_iter) = raking_inverse_entropic_distance(x_i, np.ones(len(x_i)), np.ones(len(x_i)), mu, 1.0, 500, True, False)
     print('Inverse entropic distance - race ', race, ' - full: ', num_iter, 'iterations')
     df_sub['value_raked_full'] = result_full
     df_raked_cause.append(df_sub)
@@ -192,8 +198,9 @@ df_raked_cause = pd.concat(df_raked_cause)
 df_raked_cause.sort_values(by=['race', 'cause'], inplace=True)
 
 # Compare values between two raking methods
-print('Inverse entropic distance, rake by cause, diff = ', \
+print('Inverse entropic distance, rake by cause, diff mu = ', \
     np.sum(np.abs(df_raked_cause['value_raked_direct'].to_numpy() - df_raked_cause['value_raked_full'].to_numpy())))
+print('Inverse entropic distance, rake by cause, diff lambda = ', abs(lambda_k_direct - lambda_k_full))
 
 # For each cause, rake by race using both functions
 causes = df['cause'].unique().tolist()
@@ -204,10 +211,10 @@ for cause in causes:
     if len(df_sub['all_race_value'].unique()) != 1:
         print('The margin should be the same for all races.')
     mu = df_sub['all_race_value'].iloc[0]
-    (result_direct, lambda_k, num_iter) = raking_inverse_entropic_distance(x_i, np.ones(len(x_i)), np.ones(len(x_i)), mu, 1.0, 500, True, True)
+    (result_direct, lambda_k_direct, num_iter) = raking_inverse_entropic_distance(x_i, np.ones(len(x_i)), np.ones(len(x_i)), mu, 1.0, 500, True, True)
     print('Inverse entropic distance - cause ', cause, ' - direct: ', num_iter, 'iterations')
     df_sub['value_raked_direct'] = result_direct
-    (result_full, lambda_k, num_iter) = raking_inverse_entropic_distance(x_i, np.ones(len(x_i)), np.ones(len(x_i)), mu, 1.0, 500, True, False)
+    (result_full, lambda_k_full, num_iter) = raking_inverse_entropic_distance(x_i, np.ones(len(x_i)), np.ones(len(x_i)), mu, 1.0, 500, True, False)
     print('Inverse entropic distance - cause ', cause, ' - full: ', num_iter, 'iterations')
     df_sub['value_raked_full'] = result_full
     df_raked_race.append(df_sub)
@@ -215,8 +222,9 @@ df_raked_race = pd.concat(df_raked_race)
 df_raked_race.sort_values(by=['race', 'cause'], inplace=True)
 
 # Compare values between two raking methods
-print('Inverse entropic distance, rake by race, diff = ', \
+print('Inverse entropic distance, rake by race, diff mu = ', \
     np.sum(np.abs(df_raked_race['value_raked_direct'].to_numpy() - df_raked_race['value_raked_full'].to_numpy())))
+print('Inverse entropic distance, rake by race, diff lambda = ', abs(lambda_k_direct - lambda_k_full))
 
 # Test inverse chi2 distance
 # --------------------------
@@ -230,10 +238,10 @@ for race in races:
     if len(df_sub['all_cause_value'].unique()) != 1:
         print('The margin should be the same for all causes.')
     mu = df_sub['all_cause_value'].iloc[0]
-    (result_direct, lambda_k, num_iter) = raking_inverse_chi2_distance(x_i, np.ones(len(x_i)), np.ones(len(x_i)), mu, 1.0, 500, True, True)
+    (result_direct, lambda_k_direct, num_iter) = raking_inverse_chi2_distance(x_i, np.ones(len(x_i)), np.ones(len(x_i)), mu, 1.0, 500, True, True)
     print('Inverse chi2 distance - race ', race, ' - direct: ', num_iter, 'iterations')
     df_sub['value_raked_direct'] = result_direct
-    (result_full, lambda_k, num_iter) = raking_inverse_chi2_distance(x_i, np.ones(len(x_i)), np.ones(len(x_i)), mu, 1.0, 500, True, False)
+    (result_full, lambda_k_full, num_iter) = raking_inverse_chi2_distance(x_i, np.ones(len(x_i)), np.ones(len(x_i)), mu, 1.0, 500, True, False)
     print('Inverse chi2 distance - race ', race, ' - full: ', num_iter, 'iterations')
     df_sub['value_raked_full'] = result_full
     df_raked_cause.append(df_sub)
@@ -241,8 +249,9 @@ df_raked_cause = pd.concat(df_raked_cause)
 df_raked_cause.sort_values(by=['race', 'cause'], inplace=True)
 
 # Compare values between two raking methods
-print('Inverse chi2 distance, rake by cause, diff = ', \
+print('Inverse chi2 distance, rake by cause, diff mu = ', \
     np.sum(np.abs(df_raked_cause['value_raked_direct'].to_numpy() - df_raked_cause['value_raked_full'].to_numpy())))
+print('Inverse chi2 distance, rake by cause, diff lambda = ', abs(lambda_k_direct - lambda_k_full))
 
 # For each cause, rake by race using both functions
 causes = df['cause'].unique().tolist()
@@ -253,10 +262,10 @@ for cause in causes:
     if len(df_sub['all_race_value'].unique()) != 1:
         print('The margin should be the same for all races.')
     mu = df_sub['all_race_value'].iloc[0]
-    (result_direct, lambda_k, num_iter) = raking_inverse_chi2_distance(x_i, np.ones(len(x_i)), np.ones(len(x_i)), mu, 1.0, 500, True, True)
+    (result_direct, lambda_k_direct, num_iter) = raking_inverse_chi2_distance(x_i, np.ones(len(x_i)), np.ones(len(x_i)), mu, 1.0, 500, True, True)
     print('Inverse chi2 distance - cause ', cause, ' - direct: ', num_iter, 'iterations')
     df_sub['value_raked_direct'] = result_direct
-    (result_full, lambda_k, num_iter) = raking_inverse_chi2_distance(x_i, np.ones(len(x_i)), np.ones(len(x_i)), mu, 1.0, 500, True, False)
+    (result_full, lambda_k_full, num_iter) = raking_inverse_chi2_distance(x_i, np.ones(len(x_i)), np.ones(len(x_i)), mu, 1.0, 500, True, False)
     print('Inverse chi2 distance - cause ', cause, ' - full: ', num_iter, 'iterations')
     df_sub['value_raked_full'] = result_full
     df_raked_race.append(df_sub)
@@ -264,8 +273,9 @@ df_raked_race = pd.concat(df_raked_race)
 df_raked_race.sort_values(by=['race', 'cause'], inplace=True)
 
 # Compare values between two raking methods
-print('Inverse chi2 distance, rake by race, diff = ', \
+print('Inverse chi2 distance, rake by race, diff mu = ', \
     np.sum(np.abs(df_raked_race['value_raked_direct'].to_numpy() - df_raked_race['value_raked_full'].to_numpy())))
+print('Inverse chi2 distance, rake by race, diff lambda = ', abs(lambda_k_direct - lambda_k_full))
 
 # Test general distance
 # ---------------------
@@ -279,10 +289,10 @@ for race in races:
     if len(df_sub['all_cause_value'].unique()) != 1:
         print('The margin should be the same for all causes.')
     mu = df_sub['all_cause_value'].iloc[0]
-    (result_direct, lambda_k, num_iter) = raking_general_distance(x_i, np.ones(len(x_i)), np.ones(len(x_i)), -0.5, mu, 1.0, 500, True, True)
+    (result_direct, lambda_k_direct, num_iter) = raking_general_distance(x_i, np.ones(len(x_i)), np.ones(len(x_i)), -0.5, mu, 1.0, 500, True, True)
     print('General distance - race ', race, ' - direct: ', num_iter, 'iterations')
     df_sub['value_raked_direct'] = result_direct
-    (result_full, lambda_k, num_iter) = raking_general_distance(x_i, np.ones(len(x_i)), np.ones(len(x_i)), -0.5, mu, 1.0, 500, True, False)
+    (result_full, lambda_k_full, num_iter) = raking_general_distance(x_i, np.ones(len(x_i)), np.ones(len(x_i)), -0.5, mu, 1.0, 500, True, False)
     print('General distance - race ', race, ' - full: ', num_iter, 'iterations')
     df_sub['value_raked_full'] = result_full
     df_raked_cause.append(df_sub)
@@ -290,8 +300,9 @@ df_raked_cause = pd.concat(df_raked_cause)
 df_raked_cause.sort_values(by=['race', 'cause'], inplace=True)
 
 # Compare values between two raking methods
-print('General distance, rake by cause, diff = ', \
+print('General distance, rake by cause, diff mu = ', \
     np.sum(np.abs(df_raked_cause['value_raked_direct'].to_numpy() - df_raked_cause['value_raked_full'].to_numpy())))
+print('General distance, rake by cause, diff lambda = ', abs(lambda_k_direct - lambda_k_full))
 
 # For each cause, rake by race using both functions
 causes = df['cause'].unique().tolist()
@@ -302,10 +313,10 @@ for cause in causes:
     if len(df_sub['all_race_value'].unique()) != 1:
         print('The margin should be the same for all races.')
     mu = df_sub['all_race_value'].iloc[0]
-    (result_direct, lambda_k, num_iter) = raking_general_distance(x_i, np.ones(len(x_i)), np.ones(len(x_i)), -0.5, mu, 1.0, 500, True, True)
+    (result_direct, lambda_k_direct, num_iter) = raking_general_distance(x_i, np.ones(len(x_i)), np.ones(len(x_i)), -0.5, mu, 1.0, 500, True, True)
     print('General distance - cause ', cause, ' - direct: ', num_iter, 'iterations')
     df_sub['value_raked_direct'] = result_direct
-    (result_full, lambda_k, num_iter) = raking_general_distance(x_i, np.ones(len(x_i)), np.ones(len(x_i)), -0.5, mu, 1.0, 500, True, False)
+    (result_full, lambda_k_full, num_iter) = raking_general_distance(x_i, np.ones(len(x_i)), np.ones(len(x_i)), -0.5, mu, 1.0, 500, True, False)
     print('General distance - cause ', cause, ' - full: ', num_iter, 'iterations')
     df_sub['value_raked_full'] = result_full
     df_raked_race.append(df_sub)
@@ -313,8 +324,9 @@ df_raked_race = pd.concat(df_raked_race)
 df_raked_race.sort_values(by=['race', 'cause'], inplace=True)
 
 # Compare values between two raking methods
-print('General distance, rake by race, diff = ', \
+print('General distance, rake by race, diff mu = ', \
     np.sum(np.abs(df_raked_race['value_raked_direct'].to_numpy() - df_raked_race['value_raked_full'].to_numpy())))
+print('General distance, rake by race, diff lambda = ', abs(lambda_k_direct - lambda_k_full))
 
 # Test logit distance
 # -------------------
@@ -330,10 +342,10 @@ for race in races:
     if len(df_sub['all_cause_value'].unique()) != 1:
         print('The margin should be the same for all causes.')
     mu = df_sub['all_cause_value'].iloc[0]
-    (result_direct, lambda_k, num_iter) = raking_logit(x_i, l_i, h_i, np.ones(len(x_i)), np.ones(len(x_i)), mu, 1.0, 500, True, True)
+    (result_direct, lambda_k_direct, num_iter) = raking_logit(x_i, l_i, h_i, np.ones(len(x_i)), np.ones(len(x_i)), mu, 1.0, 500, True, True)
     print('Logit - race ', race, ' - direct: ', num_iter, 'iterations')
     df_sub['value_raked_direct'] = result_direct
-    (result_full, lambda_k, num_iter) = raking_logit(x_i, l_i, h_i, np.ones(len(x_i)), np.ones(len(x_i)), mu, 1.0, 500, True, False)
+    (result_full, lambda_k_full, num_iter) = raking_logit(x_i, l_i, h_i, np.ones(len(x_i)), np.ones(len(x_i)), mu, 1.0, 500, True, False)
     print('Logit - race ', race, ' - full: ', num_iter, 'iterations')
     df_sub['value_raked_full'] = result_full
     df_raked_cause.append(df_sub)
@@ -341,8 +353,9 @@ df_raked_cause = pd.concat(df_raked_cause)
 df_raked_cause.sort_values(by=['race', 'cause'], inplace=True)
 
 # Compare values between two raking methods
-print('Logit, rake by cause, diff = ', \
+print('Logit, rake by cause, diff mu = ', \
     np.sum(np.abs(df_raked_cause['value_raked_direct'].to_numpy() - df_raked_cause['value_raked_full'].to_numpy())))
+print('Logit, rake by cause, diff lambda = ', abs(lambda_k_direct - lambda_k_full))
 
 # For each cause, rake by race using both functions
 causes = df['cause'].unique().tolist()
@@ -355,10 +368,10 @@ for cause in causes:
     if len(df_sub['all_race_value'].unique()) != 1:
         print('The margin should be the same for all races.')
     mu = df_sub['all_race_value'].iloc[0]
-    (result_direct, lambda_k, num_iter) = raking_logit(x_i, l_i, h_i, np.ones(len(x_i)), np.ones(len(x_i)), mu, 1.0, 500, True, True)
+    (result_direct, lambda_k_direct, num_iter) = raking_logit(x_i, l_i, h_i, np.ones(len(x_i)), np.ones(len(x_i)), mu, 1.0, 500, True, True)
     print('Logit - cause ', cause, ' - direct: ', num_iter, 'iterations')
     df_sub['value_raked_direct'] = result_direct
-    (result_full, lambda_k, num_iter) = raking_logit(x_i, l_i, h_i, np.ones(len(x_i)), np.ones(len(x_i)), mu, 1.0, 500, True, False)
+    (result_full, lambda_k_full, num_iter) = raking_logit(x_i, l_i, h_i, np.ones(len(x_i)), np.ones(len(x_i)), mu, 1.0, 500, True, False)
     print('Logit - cause ', cause, ' - full: ', num_iter, 'iterations')
     df_sub['value_raked_full'] = result_full
     df_raked_race.append(df_sub)
@@ -366,6 +379,7 @@ df_raked_race = pd.concat(df_raked_race)
 df_raked_race.sort_values(by=['race', 'cause'], inplace=True)
 
 # Compare values between two raking methods
-print('Logit, rake by race, diff = ', \
+print('Logit, rake by race, diff mu = ', \
     np.sum(np.abs(df_raked_race['value_raked_direct'].to_numpy() - df_raked_race['value_raked_full'].to_numpy())))
+print('Logit, rake by race, diff lambda = ', abs(lambda_k_direct - lambda_k_full))
 
